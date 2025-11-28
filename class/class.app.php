@@ -28,7 +28,7 @@ class App {
     
     private function initDatabase() {
         try {
-            $this->db = new Database();
+            $this->db = Database::getInstance(); // ✅ Use singleton
         } catch(Exception $e) {
             $this->logger->critical('Database connection failed', array('error' => $e->getMessage()));
             throw $e;

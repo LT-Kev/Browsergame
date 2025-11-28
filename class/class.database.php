@@ -9,7 +9,7 @@ class Database {
     private $charset;
     private $pdo;
     private $error;
-    public $instance;
+    private static $instance = null;
     
     private function __construct() {
         $this->host = DB_HOST;
@@ -140,7 +140,7 @@ class Database {
     public function rollback() {
         return $this->pdo->rollback();
     }
-    private function __clone() {}
-    private function __wakeup() {}
+    public function __clone() {}
+    public function __wakeup() {}
 }
 ?>

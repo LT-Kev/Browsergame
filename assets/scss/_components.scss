@@ -1,3 +1,5 @@
+// Components
+
 /* ===== HEADER ===== */
 .header {
     background: $gradient-header;
@@ -75,4 +77,105 @@ button, .btn {
     h4 { color: $color-primary; margin-bottom: 12px; font-size: 1.2em; }
     p { line-height: 1.8; color: $color-footer-text; }
     strong { color: #fff; }
+}
+
+
+.login-form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #fff;
+    font-weight: bold;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    width: 100%;
+    padding: $login-input-padding;
+    background: $login-input-bg;
+    border: 1px solid $login-input-border;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 16px;
+
+    &:focus {
+      outline: none;
+      border-color: $login-primary-color;
+    }
+  }
+}
+
+.login-remember-me {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+
+  input[type="checkbox"] {
+    width: $login-checkbox-size;
+    height: $login-checkbox-size;
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: $login-primary-color;
+  }
+
+  label {
+    color: #bdc3c7;
+    cursor: pointer;
+    user-select: none;
+    font-weight: normal;
+    margin: 0;
+  }
+
+  .login-remember-info {
+    font-size: 0.85em;
+    color: $login-secondary-color;
+    margin-top: 5px;
+    padding-left: 28px;
+  }
+}
+
+.login-btn {
+  width: 100%;
+  padding: $login-btn-padding;
+  background: $login-primary-color;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &:hover {
+    background: darken($login-primary-color, 10%);
+  }
+
+  &.login-btn-secondary {
+    background: $login-secondary-color;
+
+    &:hover {
+      background: darken($login-secondary-color, 10%);
+    }
+  }
+}
+
+.login-error {
+  background: $login-error-color;
+  color: #fff;
+  padding: 12px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.login-success {
+  background: $login-success-color;
+  color: #fff;
+  padding: 12px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+  text-align: center;
 }
