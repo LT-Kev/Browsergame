@@ -1,4 +1,4 @@
-// layout.scss
+// layout.scss - FIXED VERSION
 
 /* ===== TOPBAR ===== */
 .topbar {
@@ -97,31 +97,52 @@
   padding: 20px;
 }
 
-/* ===== MAIN CONTAINER & SIDEBARS ===== */
+/* ===== MAIN CONTAINER & SIDEBARS - PERCENTAGE BASED ===== */
 .main-container {
   display: flex;
-  justify-content: center; // alles zentriert
   gap: 25px;
-  flex-wrap: wrap; // für kleine Screens
+  flex-wrap: nowrap; // WICHTIG: Kein Umbruch, alle nebeneinander
+  align-items: flex-start;
+  max-width: 100%;
+  width: 100%;
 
   .left-sidebar {
-    flex: 0 0 280px; // feste Breite
+    flex: 0 0 20%; // 20% der Breite
+    min-width: 250px; // Absolute Mindestbreite
+    max-width: 350px; // Maximalbreite damit es nicht zu breit wird
   }
 
   .content {
-    flex: 0 0 800px; // feste Breite, schrumpft nicht
-    max-width: 100%; // für kleinere Screens
+    flex: 1 1 auto; // Nimmt den Rest
+    min-width: 0; // Wichtig für flex-shrink
+    // Berechnung: 100% - 20% (left) - 20% (right) - gaps = ~55%
   }
 
   .right-sidebar {
-    flex: 0 0 300px; // feste Breite
+    flex: 0 0 20%; // 20% der Breite
+    min-width: 250px; // Absolute Mindestbreite
+    max-width: 350px; // Maximalbreite
   }
 
+  // Responsive: Bei mittleren Bildschirmen
+  @media (max-width: 1400px) {
+    .left-sidebar,
+    .right-sidebar {
+      flex: 0 0 22%; // Etwas mehr Platz
+      min-width: 230px;
+    }
+  }
+
+  // Responsive: Bei schmalen Bildschirmen - JETZT untereinander
   @media (max-width: 1200px) {
+    flex-wrap: wrap; // Jetzt dürfen sie umbrechen
+    flex-direction: column; // Alle untereinander
+    
     .left-sidebar,
     .content,
     .right-sidebar {
-      flex: 1 1 100%; // responsive auf kleinen Screens
+      flex: 1 1 100%;
+      width: 100%;
       max-width: 100%;
       min-width: 0;
     }
@@ -135,6 +156,17 @@
   border-radius: 15px;
   padding: 25px;
   height: fit-content;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+// Center Content - passt sich dem Container an
+.center-content {
+  background: linear-gradient(135deg, #1e2a3a 0%, #0f1922 100%);
+  border: 2px solid rgba($color-primary,0.3);
+  border-radius: 15px;
+  padding: 25px;
+  min-height: 400px; // Mindesthöhe
+  width: 100%; // Volle Breite des .content Containers
   box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 

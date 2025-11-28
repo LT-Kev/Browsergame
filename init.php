@@ -140,7 +140,7 @@ ini_set('memory_limit', '128M');
 ini_set('max_execution_time', 30);
 
 // ============================================================================
-// SESSION START WITH VALIDATION
+// SESSION START WITH VALIDATION - FIXED VERSION
 // ============================================================================
 if(session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -173,20 +173,56 @@ if(session_status() === PHP_SESSION_NONE) {
         }
     }
     
-    // Session Timeout (2 Stunden Inaktivität)
-    if(isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > 7200)) {
-        session_unset();
-        session_destroy();
-        session_start();
+    // ============================================================================
+    // FIXED: Session Timeout NUR wenn NICHT via Remember-Me eingeloggt
+    // ============================================================================
+    if(!isset($_SESSION['last_activity'])) {
+        $_SESSION['last_activity'] = time();
+    } else {
+        $inactiveTime = time() - $_SESSION['last_activity'];
+        
+        // Timeout nur wenn > 2 Stunden inaktiv UND kein Remember-Token vorhanden
+        if($inactiveTime > 7200) {
+            // Prüfe ob Remember-Me-Token existiert
+            $hasRememberToken = isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token']);
+            
+            if(!$hasRememberToken) {
+                // Kein Remember-Token -> Session beenden
+                session_unset();
+                session_destroy();
+                session_start();
+                
+                if(class_exists('Logger')) {
+                    $logger = new Logger('auth');
+                    $logger->info('Session expired due to inactivity', [
+                        'inactive_time' => $inactiveTime
+                    ]);
+                }
+            } else {
+                // Remember-Token vorhanden -> Session verlängern
+                $_SESSION['last_activity'] = time();
+                
+                if(class_exists('Logger') && LOG_ENABLED) {
+                    $logger = new Logger('auth');
+                    $logger->debug('Session kept alive via remember token', [
+                        'inactive_time' => $inactiveTime
+                    ]);
+                }
+            }
+        } else {
+            // Normale Aktivität -> Update timestamp
+            $_SESSION['last_activity'] = time();
+        }
     }
-    $_SESSION['last_activity'] = time();
     
-    // Session Regeneration alle 30 Minuten
+    // Session Regeneration alle 30 Minuten (nur wenn aktiv eingeloggt)
     if(!isset($_SESSION['last_regeneration'])) {
         $_SESSION['last_regeneration'] = time();
-    } elseif(time() - $_SESSION['last_regeneration'] > 1800) {
-        session_regenerate_id(true);
-        $_SESSION['last_regeneration'] = time();
+    } elseif(isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
+        if(time() - $_SESSION['last_regeneration'] > 1800) {
+            session_regenerate_id(true);
+            $_SESSION['last_regeneration'] = time();
+        }
     }
 }
 

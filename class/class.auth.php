@@ -18,6 +18,7 @@ class Auth {
     
     /**
      * Login mit optional Remember Me
+     * FIXED VERSION
      * 
      * @param string $username Username
      * @param string $password Password
@@ -34,10 +35,14 @@ class Auth {
             $_SESSION['player_id'] = $playerData['id'];
             $_SESSION['username'] = $playerData['username'];
             $_SESSION['logged_in'] = true;
+            $_SESSION['last_activity'] = time(); // WICHTIG: Setze initial
             
             // Remember Me Token erstellen wenn gewünscht
             if($rememberMe) {
+                $_SESSION['logged_via_remember'] = true; // Marker
                 $this->rememberMe->createToken($playerData['id']);
+            } else {
+                $_SESSION['logged_via_remember'] = false;
             }
             
             $this->logger->loginAttempt($username, true, $ip);
@@ -76,6 +81,7 @@ class Auth {
     
     /**
      * Prüft ob User eingeloggt ist (inkl. Remember-Token)
+     * FIXED VERSION
      * 
      * @return bool Is logged in
      */
@@ -96,6 +102,8 @@ class Auth {
                 $_SESSION['player_id'] = $playerData['id'];
                 $_SESSION['username'] = $playerData['username'];
                 $_SESSION['logged_in'] = true;
+                $_SESSION['logged_via_remember'] = true; // WICHTIG: Marker für Remember-Login
+                $_SESSION['last_activity'] = time(); // Reset activity timer
                 
                 $this->logger->info("Auto-login via remember token", [
                     'player_id' => $playerId,
