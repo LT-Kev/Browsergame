@@ -38,8 +38,8 @@ define('LOG_MAX_SIZE', 10485760); // 10MB
 define('LOG_MAX_AGE', 30); // Tage
 
 // Entwicklungsmodus
-define('DEV_MODE', true); // Auf false setzen in Produktion
-define('DEBUG_MODE', true); // Debug-Modus für detaillierte Logs
+define('DEV_MODE', false); // Auf false setzen in Produktion
+define('DEBUG_MODE', false); // Debug-Modus für detaillierte Logs
 
 // Error Reporting
 if(DEV_MODE) {
