@@ -1,0 +1,10 @@
+# ====================================================================
+# SQL-ORDNER - ZUGRIFF KOMPLETT VERWEIGERN
+# ====================================================================
+Order Deny,Allow
+Deny from all
+
+# Auch via PHP nicht erreichbar
+<FilesMatch ".*">
+    Deny from all
+</FilesMatch>

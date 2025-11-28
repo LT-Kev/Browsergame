@@ -1,0 +1,11 @@
+# ====================================================================
+# CLASS-ORDNER - DIREKTER ZUGRIFF VERWEIGERN
+# ====================================================================
+Order Deny,Allow
+Deny from all
+
+# PHP-Includes sind erlaubt, aber kein direkter Browser-Zugriff
+<FilesMatch "\.(php)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>

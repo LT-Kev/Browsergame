@@ -1,0 +1,38 @@
+# ====================================================================
+# BROWSERGAME .HTACCESS - WINDOWS/XAMPP VERSION
+# ====================================================================
+
+# DIRECTORY LISTING DEAKTIVIEREN
+Options -Indexes
+
+# ====================================================================
+# SICHERHEIT - Zugriff auf sensible Ordner/Dateien verweigern
+# ====================================================================
+
+# SQL-Dateien schützen
+<FilesMatch "\.(sql|sql\.gz|sql\.zip)$">
+    Require all denied
+</FilesMatch>
+
+# Config-Dateien schützen
+<FilesMatch "^(config\.php|\.env|\.htaccess|\.htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+# Backup-Dateien schützen
+<FilesMatch "\.(bak|backup|old|temp|tmp)$">
+    Require all denied
+</FilesMatch>
+
+# ====================================================================
+# URL REWRITING
+# ====================================================================
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+    
+    # SQL-Ordner blockieren
+    RewriteRule ^sql/ - [F,L]
+    RewriteRule ^logs/ - [F,L]
+    RewriteRule ^config/ - [F,L]
+</IfModule>

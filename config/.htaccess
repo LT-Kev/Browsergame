@@ -1,0 +1,9 @@
+# ====================================================================
+# CONFIG-ORDNER - ZUGRIFF VERWEIGERN
+# ====================================================================
+Order Deny,Allow
+Deny from all
+
+<FilesMatch ".*">
+    Deny from all
+</FilesMatch>
