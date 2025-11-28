@@ -93,6 +93,46 @@ class Player {
         
         return true;
     }
+
+    /**
+     * Ressourcen eines Spielers aktualisieren (addieren/subtrahieren)
+     * 
+     * @param int $playerId Player ID
+     * @param array $resources Associative array ['gold' => amount, 'food' => amount, ...]
+     * @return bool Success
+     */
+    public function updateResources($playerId, $resources) {
+        // Validierung: Nur erlaubte Ressourcen
+        $allowed = ['gold', 'food', 'wood', 'stone'];
+        $updates = [];
+        $params = [':id' => $playerId];
+        
+        foreach($resources as $key => $value) {
+            if(in_array($key, $allowed)) {
+                // Ressource kann positiv (hinzufügen) oder negativ (abziehen) sein
+                $updates[] = "$key = $key + :$key";
+                $params[":$key"] = (int)$value;
+            }
+        }
+        
+        if(empty($updates)) {
+            return false;
+        }
+        
+        // SQL bauen und ausführen
+        $sql = "UPDATE players SET " . implode(', ', $updates) . " WHERE id = :id";
+        
+        $result = $this->db->update($sql, $params);
+        
+        // Optional: Logging
+        if($result !== false && class_exists('Logger')) {
+            $logger = new Logger('resources');
+            $logger->resourceChange($playerId, implode(',', array_keys($resources)), 
+                                array_sum($resources), 'Manual resource update');
+        }
+        
+        return $result !== false;
+    }
     
     public function updateGold($playerId, $amount) {
         $sql = "UPDATE players SET gold = gold + :amount WHERE id = :id";

@@ -96,5 +96,88 @@ class Resources {
             'stone_production' => $player['stone_production']
         );
     }
+    /**
+     * Ressourcen sammeln (manuell)
+     * 
+     * @param int $playerId Player ID
+     * @param string $resourceType Ressourcen-Typ (gold, food, wood, stone)
+     * @param int $amount Menge
+     * @return array Result array
+     */
+    public function gather($playerId, $resourceType, $amount = 10) {
+        $logger = new Logger('resources');
+        
+        // Validierung
+        $allowedTypes = ['gold', 'food', 'wood', 'stone'];
+        if(!in_array($resourceType, $allowedTypes)) {
+            return array('success' => false, 'message' => 'Ungültige Ressource');
+        }
+        
+        // Spieler-Daten holen
+        $playerData = $this->player->getPlayerById($playerId);
+        
+        if(!$playerData) {
+            return array('success' => false, 'message' => 'Spieler nicht gefunden');
+        }
+        
+        // Energie-Kosten (5 Energie pro 10 Ressourcen)
+        $energyCost = ceil($amount / 10) * 5;
+        
+        // Prüfe ob genug Energie vorhanden
+        if($playerData['energy'] < $energyCost) {
+            return array('success' => false, 'message' => 'Nicht genug Energie');
+        }
+        
+        // Prüfe Kapazitäts-Limit
+        $capacityKey = $resourceType . '_capacity';
+        $currentAmount = $playerData[$resourceType];
+        $maxCapacity = $playerData[$capacityKey];
+        
+        if($currentAmount >= $maxCapacity) {
+            return array('success' => false, 'message' => 'Lager ist voll');
+        }
+        
+        // Berechne tatsächlich gesammelte Menge (nicht über Kapazität)
+        $actualAmount = min($amount, $maxCapacity - $currentAmount);
+        
+        // Ressourcen hinzufügen
+        $sql = "UPDATE players 
+                SET $resourceType = $resourceType + :amount, 
+                    energy = energy - :energy_cost 
+                WHERE id = :id";
+        
+        $result = $this->db->update($sql, array(
+            ':amount' => $actualAmount,
+            ':energy_cost' => $energyCost,
+            ':id' => $playerId
+        ));
+        
+        if($result !== false) {
+            $logger->resourceChange($playerId, $resourceType, $actualAmount, 'Manual gathering');
+            
+            // Ressourcen-Namen für Anzeige
+            $resourceNames = [
+                'gold' => 'Gold',
+                'food' => 'Nahrung',
+                'wood' => 'Holz',
+                'stone' => 'Stein'
+            ];
+            
+            $message = '+' . $actualAmount . ' ' . $resourceNames[$resourceType] . ' gesammelt (-' . $energyCost . ' Energie)';
+            
+            if($actualAmount < $amount) {
+                $message .= ' (Lager war fast voll)';
+            }
+            
+            return array(
+                'success' => true, 
+                'message' => $message,
+                'gathered' => $actualAmount,
+                'energy_cost' => $energyCost
+            );
+        }
+        
+        return array('success' => false, 'message' => 'Fehler beim Sammeln');
+    }
 }
 ?>
