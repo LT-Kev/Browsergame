@@ -31,7 +31,7 @@ $adminLevelInfo = $isAdmin ? $app->getAdmin()->getAdminLevelInfo($adminLevel) : 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="assets/css/main.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
 </head>

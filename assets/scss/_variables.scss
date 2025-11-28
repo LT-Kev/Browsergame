@@ -1,0 +1,19 @@
+// Farben
+$color-primary: #e94560;
+$color-secondary: #d63251;
+$color-bg-dark: #16213e;
+$color-bg-light: #1a1a2e;
+$color-sidebar: #1e2a3a;
+$color-text: #ecf0f1;
+$color-footer-text: #bdc3c7;
+$color-admin-border: currentColor;
+
+// Fonts
+$font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+// Gradients
+$gradient-bg: linear-gradient(135deg, $color-bg-light 0%, $color-bg-dark 100%);
+$gradient-topbar: linear-gradient(135deg, #0f3460 0%, $color-bg-dark 100%);
+$gradient-header: linear-gradient(135deg, #533483 0%, #7b2cbf 100%);
+$gradient-button: linear-gradient(135deg, $color-primary 0%, $color-secondary 100%);
+$gradient-menu-hover: linear-gradient(135deg, $color-primary 0%, #d63251 100%);

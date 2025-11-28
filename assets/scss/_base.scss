@@ -1,0 +1,23 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: $font-base;
+    background: $gradient-bg;
+    color: $color-text;
+    overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 12px; }
+::-webkit-scrollbar-track { background: $color-bg-dark; }
+::-webkit-scrollbar-thumb {
+    background: $gradient-button;
+    border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, $color-secondary 0%, darken($color-secondary, 10%) 100%);
+}

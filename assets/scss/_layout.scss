@@ -1,0 +1,112 @@
+/* ===== TOPBAR ===== */
+.topbar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 60px;
+    background: $gradient-topbar;
+    border-bottom: 3px solid $color-primary;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.topbar-left {
+    font-weight: bold;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: $color-primary;
+}
+
+.topbar-right {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+
+    > span, > a {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: rgba(255,255,255,0.05);
+        border-radius: 8px;
+        transition: all 0.3s;
+        font-size: 14px;
+    }
+
+    > span:hover { 
+        background: rgba(255,255,255,0.1); 
+        transform: translateY(-2px); 
+    }
+
+    > a {
+        color: $color-primary;
+        text-decoration: none;
+        cursor: pointer;
+
+        &:hover {
+            background: rgba(233,69,96,0.2);
+            transform: translateY(-2px);
+        }
+    }
+}
+
+.admin-badge {
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.75em;
+    font-weight: bold;
+    margin-left: 8px;
+    animation: glow 2s ease-in-out infinite;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 45px;
+    background: $gradient-topbar;
+    border-top: 3px solid $color-primary;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.5);
+    font-size: 13px;
+    color: $color-footer-text;
+}
+
+/* ===== CONTENT WRAPPER ===== */
+.content-wrapper {
+    margin-top: 60px;
+    margin-bottom: 45px;
+    min-height: calc(100vh - 105px);
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+}
+
+/* ===== MAIN CONTAINER & SIDEBARS ===== */
+.main-container {
+    display: flex;
+    gap: 25px;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.left-sidebar, .right-sidebar {
+    flex: 0 0 280px;
+    background: linear-gradient(135deg, #1e2a3a 0%, #0f1922 100%);
+    border: 2px solid rgba($color-primary,0.3);
+    border-radius: 15px;
+    padding: 25px;
+    height: fit-content;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.right-sidebar { flex: 0 0 300px; }

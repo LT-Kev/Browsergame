@@ -1,0 +1,78 @@
+/* ===== HEADER ===== */
+.header {
+    background: $gradient-header;
+    padding: 40px 30px;
+    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    border: 2px solid rgba($color-primary,0.3);
+
+    h1 { font-size: 3em; text-shadow: 3px 3px 6px rgba(0,0,0,0.5); color: #fff; margin-bottom: 10px; }
+    p { font-size: 1.2em; color: $color-text; opacity: 0.9; }
+}
+
+/* ===== BUTTONS ===== */
+button, .btn {
+    padding: 12px 24px;
+    background: $gradient-button;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba($color-primary,0.3);
+
+    &:hover { 
+        background: linear-gradient(135deg, $color-secondary 0%, darken($color-secondary, 10%) 100%); 
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba($color-primary,0.5);
+    }
+
+    &:disabled { background: #95a5a6; cursor: not-allowed; transform: none; box-shadow: none; }
+}
+
+/* ===== MENU / LISTEN ===== */
+.menu-list { list-style: none; }
+.menu-list li {
+    padding: 14px 16px;
+    margin: 8px 0;
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    &:hover {
+        background: $gradient-menu-hover;
+        transform: translateX(8px);
+        border-color: $color-primary;
+        box-shadow: 0 5px 15px rgba($color-primary,0.4);
+    }
+}
+.menu-list.admin-menu li { border-left: 4px solid; }
+.menu-list.admin-menu li:hover { transform: translateX(8px) scale(1.02); }
+
+/* ===== INFO BOX ===== */
+.info-box {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+    border-left: 5px solid $color-primary;
+    padding: 20px;
+    margin: 15px 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s;
+    animation: fadeIn 0.5s ease-out;
+
+    &:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba($color-primary,0.3); }
+
+    h4 { color: $color-primary; margin-bottom: 12px; font-size: 1.2em; }
+    p { line-height: 1.8; color: $color-footer-text; }
+    strong { color: #fff; }
+}
