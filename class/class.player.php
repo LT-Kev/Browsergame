@@ -150,16 +150,36 @@ class Player {
         $newLevel = $player['level'];
         $expNeeded = $this->getExpNeeded($newLevel);
         
+        $leveledUp = false;
+        
         while($newExp >= $expNeeded) {
             $newExp -= $expNeeded;
             $newLevel++;
             $expNeeded = $this->getExpNeeded($newLevel);
+            $leveledUp = true;
         }
         
         $sql = "UPDATE players SET exp = :exp, level = :level WHERE id = :id";
         $params = array(':exp' => $newExp, ':level' => $newLevel, ':id' => $playerId);
         
-        return $this->db->update($sql, $params);
+        $result = $this->db->update($sql, $params);
+        
+        // Wenn Level-Up UND Character erstellt, dann Stats erhöhen
+        if($leveledUp && $player['character_created']) {
+            // Stats-Klasse verwenden für Level-Up
+            require_once __DIR__ . '/class.stats.php';
+            $stats = new Stats($this->db, $this);
+            $stats->onLevelUp($playerId);
+            
+            $logger = new Logger('level');
+            $logger->info("Player leveled up", [
+                'player_id' => $playerId,
+                'new_level' => $newLevel,
+                'username' => $player['username']
+            ]);
+        }
+        
+        return $result;
     }
     
     public function getExpNeeded($level) {
@@ -251,5 +271,6 @@ class Player {
             ':player_id5' => $playerId
         ));
     }
+    
 }
 ?>

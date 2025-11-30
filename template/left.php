@@ -1,10 +1,26 @@
+<?php
+// ============================================================================
+// 1. UPDATE: template/left.php - Menü mit Character-Link erweitern
+// ============================================================================
+?>
 <div class="left-sidebar">
     <h3>Navigation</h3>
     <ul class="menu-list">
         <li data-page="overview">🏠 Übersicht</li>
+        <li data-page="character" style="border-left: 3px solid #2ecc71;">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                👤 Charakter
+                <?php if($playerData['stat_points'] > 0): ?>
+                <span style="background: #2ecc71; color: #000; padding: 2px 8px; border-radius: 10px; font-size: 0.75em; font-weight: bold;">
+                    <?php echo $playerData['stat_points']; ?>
+                </span>
+                <?php endif; ?>
+            </span>
+        </li>
         <li data-page="buildings">🏗️ Gebäude</li>
         <li data-page="resources">⛏️ Ressourcen</li>
         <li data-page="combat">⚔️ Kampf</li>
+        <li data-page="skills">✨ Fähigkeiten</li>
         <li data-page="shop">🏪 Shop</li>
         <li data-page="inventory">🎒 Inventar</li>
         <li data-page="guild">👥 Gilden</li>

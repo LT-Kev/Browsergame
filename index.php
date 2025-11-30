@@ -1,6 +1,6 @@
 <?php
+// index.php
 require_once __DIR__ . '/init.php';
-
 
 $app = new App();
 
@@ -19,6 +19,15 @@ $app->getBuilding()->checkFinishedUpgrades($playerId);
 
 // Spielerdaten für Templates laden
 $playerData = $app->getPlayer()->getPlayerById($playerId);
+
+// ============================================================================
+// RPG-SYSTEM: Character Creation Check
+// ============================================================================
+// Wenn Character noch nicht erstellt wurde, zu Character Creation weiterleiten
+if(!$playerData['character_created']) {
+    header('Location: character_creation.php');
+    exit;
+}
 
 // Admin-Level prüfen
 $isAdmin = $app->getAdmin()->isAdmin($playerId);
