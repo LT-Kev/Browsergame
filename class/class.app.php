@@ -11,6 +11,11 @@ class App {
     private $admin;
     private $logger;
     private $rememberMe;
+
+    // ✅ NEU: RPG-System Klassen
+    private $race;
+    private $rpgClass;
+    private $stats;
     
     public function __construct() {
         $this->initLogger();
@@ -45,6 +50,11 @@ class App {
         $this->building = new Building($this->db, $this->player);
         $this->admin = new Admin($this->db, $this->player);
         $this->rememberMe = new RememberMe($this->db);
+
+        // ✅ NEU: RPG-System initialisieren
+        $this->race = new Race($this->db);
+        $this->rpgClass = new RPGClass($this->db);
+        $this->stats = new Stats($this->db, $this->player);
     }
     
     public function getDB() {
@@ -89,6 +99,16 @@ class App {
 
     public function getRememberMe() {
         return $this->rememberMe;
+    }
+    // ✅ NEU: RPG-System Getter
+    public function getRace() {
+        return $this->race;
+    }
+    public function getRrpgClass() {
+        return $this->rpgClass;
+    }
+    public function getStats() {
+        return $this->stats;
     }
 }
 ?>

@@ -144,6 +144,14 @@ class Player {
         return $this->db->update($sql, array(':amount' => $amount, ':id' => $playerId));
     }
     
+    /**
+     * Fügt Erfahrungspunkte hinzu und handled Level-Ups
+     * ✅ UPDATED mit RPG-System Integration
+     * 
+     * @param int $playerId Player ID
+     * @param int $exp Erfahrungspunkte
+     * @return mixed Result
+     */
     public function addExp($playerId, $exp) {
         $player = $this->getPlayerById($playerId);
         $newExp = $player['exp'] + $exp;
@@ -152,6 +160,7 @@ class Player {
         
         $leveledUp = false;
         
+        // Prüfe ob Level-Up(s)
         while($newExp >= $expNeeded) {
             $newExp -= $expNeeded;
             $newLevel++;
@@ -159,24 +168,30 @@ class Player {
             $leveledUp = true;
         }
         
+        // Update EXP & Level
         $sql = "UPDATE players SET exp = :exp, level = :level WHERE id = :id";
         $params = array(':exp' => $newExp, ':level' => $newLevel, ':id' => $playerId);
         
         $result = $this->db->update($sql, $params);
         
-        // Wenn Level-Up UND Character erstellt, dann Stats erhöhen
+        // ✅ NEU: RPG-System Level-Up
         if($leveledUp && $player['character_created']) {
-            // Stats-Klasse verwenden für Level-Up
-            require_once __DIR__ . '/class.stats.php';
+            // Lade Stats-Klasse falls noch nicht geladen
+            if(!class_exists('Stats')) {
+                require_once __DIR__ . '/class.stats.php';
+            }
+            
             $stats = new Stats($this->db, $this);
             $stats->onLevelUp($playerId);
             
+            // Logging
             $logger = new Logger('level');
-            $logger->info("Player leveled up", [
+            $logger->info("Player leveled up", array(
                 'player_id' => $playerId,
+                'old_level' => $player['level'],
                 'new_level' => $newLevel,
                 'username' => $player['username']
-            ]);
+            ));
         }
         
         return $result;
