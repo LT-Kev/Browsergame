@@ -42,6 +42,18 @@
             👥 Spieler-Verwaltung
         </li>
         <?php endif; ?>
+
+        <?php if($app->getAdmin()->hasPermission($playerId, 'system_settings')): ?>
+            <li data-page="admin/race_manager" style="border-left: 3px solid <?php echo $adminLevelInfo['color']; ?>;">
+                🧬 Rassen-Manager
+            </li>
+        <?php endif; ?>
+
+        <?php if($app->getAdmin()->hasPermission($playerId, 'system_settings')): ?>
+            <li data-page="admin/class_manager" style="border-left: 3px solid <?php echo $adminLevelInfo['color']; ?>;">
+                🧬 Klassen-Manager
+            </li>
+        <?php endif; ?>
         
         <?php if($app->getAdmin()->hasPermission($playerId, 'view_logs')): ?>
         <li data-page="admin/logs" style="border-left: 3px solid <?php echo $adminLevelInfo['color']; ?>;">
