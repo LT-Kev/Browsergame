@@ -1,46 +1,30 @@
 <?php
-// ============================================================================
-// ajax/learn_class.php
-/**
- * Neue Klasse lernen
- */
+// ajax/get_classes.php
 require_once __DIR__ . '/../init.php';
 
 header('Content-Type: application/json');
 
-$app = new App();
-$auth = $app->getAuth();
-
-if(!$auth->isLoggedIn()) {
-    echo json_encode(['success' => false, 'message' => 'Nicht eingeloggt']);
-    exit;
+try {
+    $app = new App();
+    $db = $app->getDB();
+    
+    $sql = "SELECT * FROM classes WHERE is_starter_class = 1 ORDER BY type, name";
+    $classes = $db->select($sql);
+    
+    if($classes === false) {
+        throw new Exception('Datenbank-Fehler beim Laden der Klassen');
+    }
+    
+    echo json_encode([
+        'success' => true,
+        'classes' => $classes
+    ]);
+    
+} catch(Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Fehler beim Laden der Klassen: ' . $e->getMessage()
+    ]);
 }
-
-$playerId = $auth->getCurrentPlayerId();
-
-// CSRF-Token prüfen
-if(!CSRF::validateToken($_POST['csrf_token'] ?? '')) {
-    echo json_encode(['success' => false, 'message' => 'CSRF-Token ungültig']);
-    exit;
-}
-
-$classId = filter_var($_POST['class_id'] ?? 0, FILTER_VALIDATE_INT);
-
-if(!$classId) {
-    echo json_encode(['success' => false, 'message' => 'Ungültige Klassen-ID']);
-    exit;
-}
-
-// RPGClass verwenden
-$rpgClass = new RPGClass($app->getDB());
-$result = $rpgClass->learnClass($playerId, $classId);
-
-echo json_encode($result);
-
-
-
-// RPGClass verwenden
-//$rpgClass = new RPGClass($app->getDB());
-//$result = $rpgClass->switchClass($playerId, $classId);
-
-//echo json_encode($result);
+?>
