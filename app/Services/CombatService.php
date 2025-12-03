@@ -1,48 +1,57 @@
 <?php
-
 // ============================================================================
 // app/Services/CombatService.php
 // ============================================================================
+namespace App\Services;
+
+use App\Core\Database;
 
 class CombatService {
-    private App $app;
+    private Database $db;
+    private PlayerService $player;
 
-    public function __construct(App $app) {
-        $this->app = $app;
+    public function __construct(Database $db, PlayerService $player) {
+        $this->db = $db;
+        $this->player = $player;
     }
 
     public function fight(int $playerId, array $monsterData): array {
-        $player = $this->app->getPlayer()->getPlayerById($playerId);
-        if(!$player) return ['success' => false, 'message' => 'Spieler nicht gefunden'];
-        if($player['energy'] < 10) return ['success' => false, 'message' => 'Nicht genug Energie'];
+        $playerData = $this->player->getPlayerById($playerId);
+        if(!$playerData) {
+            return ['success' => false, 'message' => 'Spieler nicht gefunden'];
+        }
 
-        $playerHP = $player['hp'];
+        if($playerData['energy'] < 10) {
+            return ['success' => false, 'message' => 'Nicht genug Energie'];
+        }
+
+        $playerHP = $playerData['hp'];
         $monsterHP = $monsterData['hp'];
         $rounds = [];
 
         while($playerHP > 0 && $monsterHP > 0) {
-            $playerDamage = max(1, $player['attack'] - $monsterData['defense']);
+            $playerDamage = max(1, $playerData['attack'] - $monsterData['defense']);
             $monsterHP -= $playerDamage;
             $rounds[] = ['attacker' => 'player', 'damage' => $playerDamage, 'monster_hp' => max(0, $monsterHP)];
 
             if($monsterHP <= 0) break;
 
-            $monsterDamage = max(1, $monsterData['attack'] - $player['defense']);
+            $monsterDamage = max(1, $monsterData['attack'] - $playerData['defense']);
             $playerHP -= $monsterDamage;
             $rounds[] = ['attacker' => 'monster', 'damage' => $monsterDamage, 'player_hp' => max(0, $playerHP)];
         }
 
         $victory = $playerHP > 0;
-        $this->app->getPlayer()->updateHP($playerId, $playerHP - $player['hp']);
-        $this->app->getPlayer()->updateEnergy($playerId, -10);
+        $this->player->updateHP($playerId, $playerHP - $playerData['hp']);
+        $this->player->updateEnergy($playerId, -10);
 
         $result = ['success' => true, 'victory' => $victory, 'rounds' => $rounds, 'player_hp' => max(0, $playerHP), 'rewards' => []];
 
         if($victory) {
             $goldReward = rand($monsterData['gold_min'], $monsterData['gold_max']);
             $expReward = $monsterData['exp'];
-            $this->app->getPlayer()->updateResources($playerId, ['gold' => $goldReward]);
-            $this->app->getPlayer()->addExp($playerId, $expReward);
+            $this->player->updateResources($playerId, ['gold' => $goldReward]);
+            $this->player->addExp($playerId, $expReward);
             $result['rewards'] = ['gold' => $goldReward, 'exp' => $expReward];
         }
 

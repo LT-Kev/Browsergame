@@ -5,8 +5,18 @@ use App\Services\PlayerService;
 use App\Services\ResourceService;
 use App\Services\BuildingService;
 use App\Services\AdminService;
+use App\Services\CombatService;
+use App\Services\InventoryService;
+use App\Services\QuestService;
+use App\Services\RememberMeService;
+use App\Services\RaceService;
+use App\Services\RPGClassService;
+use App\Services\StatsService;
 
 class App {
+    private static ?App $instance = null;
+    
+    private Database $db;
     private SessionManager $session;
     private Logger $logger;
 
@@ -14,15 +24,79 @@ class App {
     private ResourceService $resourceService;
     private BuildingService $buildingService;
     private AdminService $adminService;
+    private CombatService $combatService;
+    private InventoryService $inventoryService;
+    private QuestService $questService;
+    private RememberMeService $rememberMeService;
+    private RaceService $raceService;
+    private RPGClassService $rpgClassService;
+    private StatsService $statsService;
+    
+    private Auth $auth;
 
-    public function __construct(SessionManager $session, Logger $logger) {
-        $this->session = $session;
-        $this->logger = $logger;
+    private function __construct() {
+        $this->initCore();
+        $this->initServices();
+    }
+    
+    public static function getInstance(): self {
+        if (self::$instance === null) {
+            self::$instance = new self();
+        }
+        return self::$instance;
+    }
+    
+    private function initCore(): void {
+        // Database mit Config
+        $config = [
+            'host' => DB_HOST,
+            'dbname' => DB_NAME,
+            'user' => DB_USER,
+            'password' => DB_PASS
+        ];
+        $this->db = Database::getInstance($config);
+        
+        // Session Manager
+        $this->session = new SessionManager();
+        $this->session->start();
+        
+        // Logger
+        $this->logger = new Logger('app');
+        
+        if(LOG_ENABLED) {
+            $this->logger->info('App Core initialized');
+        }
+    }
+    
+    private function initServices(): void {
+        // Core Services
+        $this->playerService = new PlayerService($this->db, $this->logger);
+        $this->resourceService = new ResourceService($this->db, $this->playerService);
+        $this->buildingService = new BuildingService($this->db, $this->playerService);
+        $this->adminService = new AdminService($this->db, $this->playerService);
+        
+        // Extended Services
+        $this->combatService = new CombatService($this->db, $this->playerService);
+        $this->inventoryService = new InventoryService($this->db);
+        $this->questService = new QuestService($this->db);
+        $this->rememberMeService = new RememberMeService($this->db);
+        
+        // RPG System Services
+        $this->raceService = new RaceService($this->db);
+        $this->rpgClassService = new RPGClassService($this->db);
+        $this->statsService = new StatsService($this->db, $this->playerService);
+        
+        // Auth (needs other services)
+        $this->auth = new Auth($this);
+        
+        if(LOG_ENABLED) {
+            $this->logger->info('All Services initialized');
+        }
+    }
 
-        $this->playerService = new PlayerService($this);
-        $this->resourceService = new ResourceService($this);
-        $this->buildingService = new BuildingService($this);
-        $this->adminService = new AdminService($this);
+    // Getters
+    public function getDB(): Database {
+        return $this->db;
     }
 
     public function getSession(): SessionManager {
@@ -49,7 +123,41 @@ class App {
         return $this->adminService;
     }
 
+    public function getCombat(): CombatService {
+        return $this->combatService;
+    }
+
+    public function getInventory(): InventoryService {
+        return $this->inventoryService;
+    }
+
+    public function getQuest(): QuestService {
+        return $this->questService;
+    }
+
+    public function getRememberMe(): RememberMeService {
+        return $this->rememberMeService;
+    }
+
+    public function getRace(): RaceService {
+        return $this->raceService;
+    }
+
+    public function getRPGClass(): RPGClassService {
+        return $this->rpgClassService;
+    }
+
+    public function getStats(): StatsService {
+        return $this->statsService;
+    }
+
     public function getAuth(): Auth {
-        return new Auth($this);
+        return $this->auth;
+    }
+    
+    // Prevent cloning
+    private function __clone() {}
+    public function __wakeup() {
+        throw new \Exception("Cannot unserialize singleton");
     }
 }

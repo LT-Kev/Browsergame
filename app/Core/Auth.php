@@ -37,7 +37,7 @@ class Auth {
     
     public function getCurrentPlayerId(): ?int {
         if(isset($_SESSION['player_id'])) {
-            return $_SESSION['player_id'];
+            return (int)$_SESSION['player_id'];
         }
         return null;
     }
@@ -143,9 +143,5 @@ class Auth {
             header("Location: {$redirectUrl}");
             exit;
         }
-    }
-    
-    public function getRememberMe(): \App\Services\RememberMe {
-        return $this->app->getRememberMe();
     }
 }
