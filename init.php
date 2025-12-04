@@ -169,6 +169,51 @@ spl_autoload_register(function($className) {
 });
 
 // ============================================================================
+// AUTO-LOGIN via Remember-Me (falls keine Session aktiv ist)
+// ============================================================================
+if (empty($_SESSION['logged_in'])) {
+
+    if (!empty($_COOKIE['remember_token'])) {
+
+        try {
+            $rememberService = new App\Services\RememberMeService($app->getDB());
+            $playerId = $rememberService->validateToken();
+
+            if ($playerId !== false) {
+
+                // Session sauber neu erstellen
+                session_regenerate_id(true);
+
+                $_SESSION['logged_in'] = true;
+                $_SESSION['player_id'] = $playerId;
+                $_SESSION['initiated'] = true;
+                $_SESSION['created'] = time();
+                $_SESSION['last_activity'] = time();
+                $_SESSION['last_regeneration'] = time();
+                $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
+                $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? '';
+
+                if (LOG_ENABLED) {
+                    $logger = new App\Core\Logger('auth');
+                    $logger->info("Auto-login via RememberMe successful", [
+                        'player_id' => $playerId,
+                        'selector' => explode(':', $_COOKIE['remember_token'])[0]
+                    ]);
+                }
+            }
+        } catch (Exception $e) {
+            if (LOG_ENABLED) {
+                $logger = new App\Core\Logger('auth');
+                $logger->error("RememberMe auto-login failed", [
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+    }
+}
+
+
+// ============================================================================
 // SESSION START WITH VALIDATION
 // ============================================================================
 if(session_status() === PHP_SESSION_NONE) {
