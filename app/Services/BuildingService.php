@@ -1,34 +1,53 @@
 <?php
-
 // ============================================================================
 // app/Services/BuildingService.php
 // ============================================================================
 
-class BuildingService {
-    private App $app;
+namespace App\Services;
 
-    public function __construct(App $app) {
-        $this->app = $app;
+use App\Core\Database;
+use App\Core\Logger;
+
+class BuildingService {
+    private Database $db;
+    private PlayerService $player;
+    private Logger $logger;
+
+    public function __construct(Database $db, PlayerService $player) {
+        $this->db = $db;
+        $this->player = $player;
+        $this->logger = new Logger('building');
     }
 
     public function getAllBuildingTypes(): array {
         $sql = "SELECT * FROM building_types ORDER BY type, name";
-        return $this->app->getDb()->select($sql);
+        return $this->db->select($sql);
     }
 
     public function getBuildingTypeById(int $buildingTypeId): ?array {
         $sql = "SELECT * FROM building_types WHERE id = :id LIMIT 1";
-        return $this->app->getDb()->selectOne($sql, [':id' => $buildingTypeId]);
+        return $this->db->selectOne($sql, [':id' => $buildingTypeId]);
     }
 
     public function getPlayerBuildings(int $playerId): array {
-        $sql = "SELECT pb.*, bt.* FROM player_buildings pb JOIN building_types bt ON pb.building_type_id = bt.id WHERE pb.player_id = :player_id ORDER BY bt.type, bt.name";
-        return $this->app->getDb()->select($sql, [':player_id' => $playerId]);
+        $sql = "SELECT pb.*, bt.name, bt.description, bt.type, bt.max_level,
+                bt.produces_gold, bt.produces_food, bt.produces_wood, bt.produces_stone,
+                bt.increases_gold_capacity, bt.increases_food_capacity, 
+                bt.increases_wood_capacity, bt.increases_stone_capacity
+                FROM player_buildings pb
+                JOIN building_types bt ON pb.building_type_id = bt.id
+                WHERE pb.player_id = :player_id
+                ORDER BY bt.type, bt.name";
+        
+        return $this->db->select($sql, [':player_id' => $playerId]);
     }
 
     public function getPlayerBuilding(int $playerId, int $buildingTypeId): ?array {
-        $sql = "SELECT pb.*, bt.* FROM player_buildings pb JOIN building_types bt ON pb.building_type_id = bt.id WHERE pb.player_id = :player_id AND pb.building_type_id = :building_type_id LIMIT 1";
-        return $this->app->getDb()->selectOne($sql, [':player_id' => $playerId, ':building_type_id' => $buildingTypeId]);
+        $sql = "SELECT pb.*, bt.* FROM player_buildings pb
+                JOIN building_types bt ON pb.building_type_id = bt.id
+                WHERE pb.player_id = :player_id AND pb.building_type_id = :building_type_id LIMIT 1";
+        
+        return $this->db->selectOne($sql, [':player_id' => $playerId, ':building_type_id' => $buildingTypeId]);
     }
 
     public function getUpgradeCost(int $buildingTypeId, int $currentLevel): array {
@@ -47,72 +66,141 @@ class BuildingService {
 
     public function upgradeBuilding(int $playerId, int $buildingTypeId): array {
         $building = $this->getPlayerBuilding($playerId, $buildingTypeId);
-        if(!$building) return ['success' => false, 'message' => 'Gebäude nicht gefunden'];
-        if($building['is_upgrading']) return ['success' => false, 'message' => 'Gebäude wird bereits ausgebaut'];
-        if($building['level'] >= $building['max_level']) return ['success' => false, 'message' => 'Maximales Level erreicht'];
-
+        
+        if(!$building) {
+            $this->logger->warning("Upgrade failed: Building not found", ['player_id' => $playerId, 'building_type_id' => $buildingTypeId]);
+            return ['success' => false, 'message' => 'Gebäude nicht gefunden'];
+        }
+        
+        if($building['is_upgrading']) {
+            $this->logger->warning("Upgrade failed: Already upgrading", ['player_id' => $playerId, 'building' => $building['name']]);
+            return ['success' => false, 'message' => 'Gebäude wird bereits ausgebaut'];
+        }
+        
+        if($building['level'] >= $building['max_level']) {
+            $this->logger->info("Upgrade failed: Max level reached", ['player_id' => $playerId, 'building' => $building['name']]);
+            return ['success' => false, 'message' => 'Maximales Level erreicht'];
+        }
+        
+        if($buildingTypeId != 1) {
+            $mainBuilding = $this->getPlayerBuilding($playerId, 1);
+            if($building['level'] >= $mainBuilding['level']) {
+                $this->logger->warning("Upgrade failed: Main building level too low", ['player_id' => $playerId, 'building' => $building['name']]);
+                return ['success' => false, 'message' => 'Hauptgebäude muss zuerst ausgebaut werden'];
+            }
+        }
+        
         $costs = $this->getUpgradeCost($buildingTypeId, $building['level']);
-        if(!$this->app->getPlayer()->hasEnoughResources($playerId, $costs)) {
+        
+        if(!$this->player->hasEnoughResources($playerId, $costs)) {
+            $this->logger->warning("Upgrade failed: Not enough resources", ['player_id' => $playerId, 'building' => $building['name'], 'costs' => $costs]);
             return ['success' => false, 'message' => 'Nicht genug Ressourcen'];
         }
-
-        $this->app->getPlayer()->updateResources($playerId, [
+        
+        $this->player->updateResources($playerId, [
             'gold' => -$costs['gold'],
             'food' => -$costs['food'],
             'wood' => -$costs['wood'],
             'stone' => -$costs['stone']
         ]);
-
+        
         $finishTime = date('Y-m-d H:i:s', time() + $costs['time']);
-        $sql = "UPDATE player_buildings SET is_upgrading = 1, upgrade_finish_time = :finish_time WHERE player_id = :player_id AND building_type_id = :building_type_id";
-        $this->app->getDb()->update($sql, [':finish_time' => $finishTime, ':player_id' => $playerId, ':building_type_id' => $buildingTypeId]);
-
+        
+        $sql = "UPDATE player_buildings SET is_upgrading = 1, upgrade_finish_time = :finish_time 
+                WHERE player_id = :player_id AND building_type_id = :building_type_id";
+        $this->db->update($sql, [':finish_time' => $finishTime, ':player_id' => $playerId, ':building_type_id' => $buildingTypeId]);
+        
+        $sql = "INSERT INTO upgrade_queue (player_id, building_id, start_time, finish_time, target_level)
+                VALUES (:player_id, :building_id, NOW(), :finish_time, :target_level)";
+        $this->db->insert($sql, [':player_id' => $playerId, ':building_id' => $building['id'], ':finish_time' => $finishTime, ':target_level' => $building['level'] + 1]);
+        
+        $this->logger->info("Upgrade started", ['player_id' => $playerId, 'building' => $building['name'], 'target_level' => $building['level'] + 1, 'costs' => $costs, 'finish_time' => $finishTime]);
+        
         return ['success' => true, 'message' => 'Upgrade gestartet', 'finish_time' => $finishTime, 'duration' => $costs['time']];
     }
 
     public function checkFinishedUpgrades(int $playerId): int {
-        $sql = "SELECT pb.*, uq.target_level, uq.id as queue_id FROM player_buildings pb JOIN upgrade_queue uq ON pb.id = uq.building_id WHERE pb.player_id = :player_id AND pb.is_upgrading = 1 AND uq.finish_time <= NOW()";
-        $finishedBuildings = $this->app->getDb()->select($sql, [':player_id' => $playerId]);
-
+        $sql = "SELECT pb.*, uq.target_level, uq.id as queue_id FROM player_buildings pb
+                JOIN upgrade_queue uq ON pb.id = uq.building_id
+                WHERE pb.player_id = :player_id AND pb.is_upgrading = 1 AND uq.finish_time <= NOW()";
+        
+        $finishedBuildings = $this->db->select($sql, [':player_id' => $playerId]);
+        
         foreach($finishedBuildings as $building) {
             $sql = "UPDATE player_buildings SET level = :level, is_upgrading = 0, upgrade_finish_time = NULL WHERE id = :id";
-            $this->app->getDb()->update($sql, [':level' => $building['target_level'], ':id' => $building['id']]);
-
+            $this->db->update($sql, [':level' => $building['target_level'], ':id' => $building['id']]);
+            
             $sql = "DELETE FROM upgrade_queue WHERE id = :id";
-            $this->app->getDb()->delete($sql, [':id' => $building['queue_id']]);
-
+            $this->db->delete($sql, [':id' => $building['queue_id']]);
+            
             $this->updatePlayerProduction($playerId);
         }
-
+        
         return count($finishedBuildings);
     }
 
     public function updatePlayerProduction(int $playerId): void {
         $buildings = $this->getPlayerBuildings($playerId);
+        
         $goldProd = 10;
         $foodProd = 10;
         $woodProd = 10;
         $stoneProd = 10;
+        
         $goldCap = 1000;
         $foodCap = 1000;
         $woodCap = 1000;
         $stoneCap = 1000;
-
+        
         foreach($buildings as $building) {
             $goldProd += $building['produces_gold'] * $building['level'];
             $foodProd += $building['produces_food'] * $building['level'];
             $woodProd += $building['produces_wood'] * $building['level'];
             $stoneProd += $building['produces_stone'] * $building['level'];
+            
             $goldCap += $building['increases_gold_capacity'] * $building['level'];
             $foodCap += $building['increases_food_capacity'] * $building['level'];
             $woodCap += $building['increases_wood_capacity'] * $building['level'];
             $stoneCap += $building['increases_stone_capacity'] * $building['level'];
         }
-
-        $sql = "UPDATE players SET gold_production = :gp, food_production = :fp, wood_production = :wp, stone_production = :sp, gold_capacity = :gc, food_capacity = :fc, wood_capacity = :wc, stone_capacity = :sc WHERE id = :id";
-        $this->app->getDb()->update($sql, [
-            ':gp' => $goldProd, ':fp' => $foodProd, ':wp' => $woodProd, ':sp' => $stoneProd,
-            ':gc' => $goldCap, ':fc' => $foodCap, ':wc' => $woodCap, ':sc' => $stoneCap, ':id' => $playerId
+        
+        $sql = "UPDATE players SET 
+                gold_production = :gold_prod, food_production = :food_prod, 
+                wood_production = :wood_prod, stone_production = :stone_prod,
+                gold_capacity = :gold_cap, food_capacity = :food_cap,
+                wood_capacity = :wood_cap, stone_capacity = :stone_cap
+                WHERE id = :player_id";
+        
+        $this->db->update($sql, [
+            ':gold_prod' => $goldProd, ':food_prod' => $foodProd, ':wood_prod' => $woodProd, ':stone_prod' => $stoneProd,
+            ':gold_cap' => $goldCap, ':food_cap' => $foodCap, ':wood_cap' => $woodCap, ':stone_cap' => $stoneCap, 
+            ':player_id' => $playerId
         ]);
+    }
+
+    public function cancelUpgrade(int $playerId, int $buildingTypeId): array {
+        $building = $this->getPlayerBuilding($playerId, $buildingTypeId);
+        
+        if(!$building || !$building['is_upgrading']) {
+            return ['success' => false, 'message' => 'Kein aktives Upgrade'];
+        }
+        
+        $costs = $this->getUpgradeCost($buildingTypeId, $building['level']);
+        
+        $this->player->updateResources($playerId, [
+            'gold' => ceil($costs['gold'] * 0.5),
+            'food' => ceil($costs['food'] * 0.5),
+            'wood' => ceil($costs['wood'] * 0.5),
+            'stone' => ceil($costs['stone'] * 0.5)
+        ]);
+        
+        $sql = "UPDATE player_buildings SET is_upgrading = 0, upgrade_finish_time = NULL 
+                WHERE player_id = :player_id AND building_type_id = :building_type_id";
+        $this->db->update($sql, [':player_id' => $playerId, ':building_type_id' => $buildingTypeId]);
+        
+        $sql = "DELETE FROM upgrade_queue WHERE building_id = :building_id";
+        $this->db->delete($sql, [':building_id' => $building['id']]);
+        
+        return ['success' => true, 'message' => 'Upgrade abgebrochen, 50% der Ressourcen zurückerstattet'];
     }
 }

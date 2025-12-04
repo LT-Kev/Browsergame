@@ -6,11 +6,11 @@
  * - Configuration
  * - Security Settings
  * - Session Management
- * - Autoloader
+ * - Autoloader (PSR-4 für app/)
  * - Global Functions
  * - Error Handling
  * 
- * @version 2.0
+ * @version 3.0 - Migriert zu app/ Struktur
  * @author Your Name
  */
 
@@ -25,7 +25,8 @@ if(!defined('INIT_LOADED')) {
 // BASE PATHS
 // ============================================================================
 define('BASE_PATH', __DIR__);
-define('CLASS_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'class');
+define('APP_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'app');
+define('CLASS_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'class'); // Legacy Support
 define('CONFIG_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'config');
 define('PAGES_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'pages');
 define('AJAX_PATH', BASE_PATH . DIRECTORY_SEPARATOR . 'ajax');
@@ -53,15 +54,16 @@ if(DEV_MODE) {
     
     // Custom Error Handler für Produktion
     set_error_handler(function($errno, $errstr, $errfile, $errline) {
-        $logger = new Logger('error');
-        $logger->error("PHP Error: {$errstr}", [
-            'errno' => $errno,
-            'file' => $errfile,
-            'line' => $errline,
-            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5)
-        ]);
+        if(class_exists('App\Core\Logger')) {
+            $logger = new App\Core\Logger('error');
+            $logger->error("PHP Error: {$errstr}", [
+                'errno' => $errno,
+                'file' => $errfile,
+                'line' => $errline,
+                'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5)
+            ]);
+        }
         
-        // User-freundliche Fehlermeldung
         if(!headers_sent()) {
             http_response_code(500);
         }
@@ -71,12 +73,14 @@ if(DEV_MODE) {
     
     // Exception Handler
     set_exception_handler(function($exception) {
-        $logger = new Logger('error');
-        $logger->critical("Uncaught Exception: " . $exception->getMessage(), [
-            'file' => $exception->getFile(),
-            'line' => $exception->getLine(),
-            'trace' => $exception->getTraceAsString()
-        ]);
+        if(class_exists('App\Core\Logger')) {
+            $logger = new App\Core\Logger('error');
+            $logger->critical("Uncaught Exception: " . $exception->getMessage(), [
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine(),
+                'trace' => $exception->getTraceAsString()
+            ]);
+        }
         
         if(!headers_sent()) {
             http_response_code(500);
@@ -89,11 +93,13 @@ if(DEV_MODE) {
     register_shutdown_function(function() {
         $error = error_get_last();
         if($error !== null && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-            $logger = new Logger('error');
-            $logger->critical("Fatal Error: {$error['message']}", [
-                'file' => $error['file'],
-                'line' => $error['line']
-            ]);
+            if(class_exists('App\Core\Logger')) {
+                $logger = new App\Core\Logger('error');
+                $logger->critical("Fatal Error: {$error['message']}", [
+                    'file' => $error['file'],
+                    'line' => $error['line']
+                ]);
+            }
         }
     });
 }
@@ -109,18 +115,18 @@ ini_set('error_log', LOG_DIR . 'php_errors.log');
 // Session Security
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', !DEV_MODE); // Nur HTTPS in Produktion
+ini_set('session.cookie_secure', !DEV_MODE);
 ini_set('session.cookie_samesite', 'Strict');
 ini_set('session.use_strict_mode', 1);
 ini_set('session.sid_length', 48);
 ini_set('session.sid_bits_per_character', 6);
 
-// Session Name ändern (versteckt PHP)
+// Session Name ändern
 ini_set('session.name', 'GAMESESSION');
 
 // Session Lifetime
-ini_set('session.gc_maxlifetime', 7200); // 2 Stunden
-ini_set('session.cookie_lifetime', 0); // Bis Browser geschlossen
+ini_set('session.gc_maxlifetime', 7200);
+ini_set('session.cookie_lifetime', 0);
 
 // Expose PHP deaktivieren
 if(function_exists('header_remove')) {
@@ -128,7 +134,7 @@ if(function_exists('header_remove')) {
 }
 ini_set('expose_php', 0);
 
-// Upload Limits (Sicherheit)
+// Upload Limits
 ini_set('upload_max_filesize', '5M');
 ini_set('post_max_size', '6M');
 ini_set('max_file_uploads', 3);
@@ -140,7 +146,46 @@ ini_set('memory_limit', '128M');
 ini_set('max_execution_time', 30);
 
 // ============================================================================
-// SESSION START WITH VALIDATION - FIXED VERSION
+// PSR-4 AUTOLOADER für app/ Namespace
+// ============================================================================
+spl_autoload_register(function($className) {
+    // PSR-4: App\ Namespace → app/ Ordner
+    if(strpos($className, 'App\\') === 0) {
+        // Namespace zu Pfad: App\Core\Database → app/Core/Database.php
+        $classPath = APP_PATH . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($className, 4)) . '.php';
+        
+        if(file_exists($classPath)) {
+            require_once $classPath;
+            return;
+        }
+        
+        // Logging wenn Klasse nicht gefunden
+        if(DEV_MODE) {
+            trigger_error("Class not found: {$className} (expected: {$classPath})", E_USER_WARNING);
+        }
+        
+        return;
+    }
+    
+    // ========================================================================
+    // LEGACY SUPPORT: Alte class/ Ordner Struktur
+    // ========================================================================
+    // Für Abwärtskompatibilität während Migration
+    $legacyFile = CLASS_PATH . DIRECTORY_SEPARATOR . 'class.' . strtolower($className) . '.php';
+    
+    if(file_exists($legacyFile)) {
+        require_once $legacyFile;
+        return;
+    }
+    
+    // Logging
+    if(DEV_MODE) {
+        trigger_error("Class not found: {$className}", E_USER_WARNING);
+    }
+});
+
+// ============================================================================
+// SESSION START WITH VALIDATION
 // ============================================================================
 if(session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -157,15 +202,14 @@ if(session_status() === PHP_SESSION_NONE) {
         $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
         $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'] ?? '';
     } else {
-        // Validiere User Agent & IP
         if($_SESSION['user_agent'] !== ($_SERVER['HTTP_USER_AGENT'] ?? '')) {
             session_unset();
             session_destroy();
             session_start();
             
-            if(class_exists('Logger')) {
-                $logger = new Logger('security');
-                $logger->securityEvent('Session hijacking attempt detected', [
+            if(class_exists('App\Core\Logger')) {
+                $logger = new App\Core\Logger('security');
+                $logger->warning('Session hijacking attempt detected', [
                     'expected_ua' => $_SESSION['user_agent'],
                     'actual_ua' => $_SERVER['HTTP_USER_AGENT'] ?? ''
                 ]);
@@ -173,49 +217,35 @@ if(session_status() === PHP_SESSION_NONE) {
         }
     }
     
-    // ============================================================================
-    // FIXED: Session Timeout NUR wenn NICHT via Remember-Me eingeloggt
-    // ============================================================================
+    // Session Timeout mit Remember-Me Support
     if(!isset($_SESSION['last_activity'])) {
         $_SESSION['last_activity'] = time();
     } else {
         $inactiveTime = time() - $_SESSION['last_activity'];
         
-        // Timeout nur wenn > 2 Stunden inaktiv UND kein Remember-Token vorhanden
         if($inactiveTime > 7200) {
-            // Prüfe ob Remember-Me-Token existiert
             $hasRememberToken = isset($_COOKIE['remember_token']) && !empty($_COOKIE['remember_token']);
             
             if(!$hasRememberToken) {
-                // Kein Remember-Token -> Session beenden
                 session_unset();
                 session_destroy();
                 session_start();
                 
-                if(class_exists('Logger')) {
-                    $logger = new Logger('auth');
+                if(class_exists('App\Core\Logger') && LOG_ENABLED) {
+                    $logger = new App\Core\Logger('auth');
                     $logger->info('Session expired due to inactivity', [
                         'inactive_time' => $inactiveTime
                     ]);
                 }
             } else {
-                // Remember-Token vorhanden -> Session verlängern
                 $_SESSION['last_activity'] = time();
-                
-                if(class_exists('Logger') && LOG_ENABLED) {
-                    $logger = new Logger('auth');
-                    $logger->debug('Session kept alive via remember token', [
-                        'inactive_time' => $inactiveTime
-                    ]);
-                }
             }
         } else {
-            // Normale Aktivität -> Update timestamp
             $_SESSION['last_activity'] = time();
         }
     }
     
-    // Session Regeneration alle 30 Minuten (nur wenn aktiv eingeloggt)
+    // Session Regeneration alle 30 Minuten
     if(!isset($_SESSION['last_regeneration'])) {
         $_SESSION['last_regeneration'] = time();
     } elseif(isset($_SESSION['logged_in']) && $_SESSION['logged_in'] === true) {
@@ -227,35 +257,11 @@ if(session_status() === PHP_SESSION_NONE) {
 }
 
 // ============================================================================
-// AUTOLOADER
-// ============================================================================
-spl_autoload_register(function($className) {
-    // Class-Datei Pfad
-    $classFile = CLASS_PATH . DIRECTORY_SEPARATOR . 'class.' . strtolower($className) . '.php';
-    
-    if(file_exists($classFile)) {
-        require_once $classFile;
-    } else {
-        // Logging nur wenn Logger bereits geladen
-        if(class_exists('Logger', false)) {
-            $logger = new Logger('system');
-            $logger->warning("Class not found: {$className}", [
-                'expected_path' => $classFile,
-                'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)
-            ]);
-        }
-        
-        if(DEV_MODE) {
-            trigger_error("Class not found: {$className} in {$classFile}", E_USER_WARNING);
-        }
-    }
-});
-
-// ============================================================================
-// INITIALIZE APP
+// INITIALIZE APP (neue Struktur)
 // ============================================================================
 try {
-    $app = new App();
+    // Verwende neue App-Struktur
+    $app = App\Core\App::getInstance();
     $auth = $app->getAuth();
     
     if(LOG_ENABLED) {
@@ -267,8 +273,8 @@ try {
     }
     
 } catch(Exception $e) {
-    if(class_exists('Logger')) {
-        $logger = new Logger('critical');
+    if(class_exists('App\Core\Logger')) {
+        $logger = new App\Core\Logger('critical');
         $logger->critical('Failed to initialize App', [
             'error' => $e->getMessage(),
             'trace' => $e->getTraceAsString()
@@ -276,7 +282,7 @@ try {
     }
     
     if(DEV_MODE) {
-        die("Critical Error: " . $e->getMessage());
+        die("Critical Error: " . $e->getMessage() . "<br><pre>" . $e->getTraceAsString() . "</pre>");
     } else {
         die("System initialization failed. Please contact administrator.");
     }
@@ -286,58 +292,28 @@ try {
 // GLOBAL HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * HTML Escape für XSS-Schutz
- * 
- * @param string $string String to escape
- * @param bool $doubleEncode Ob bereits encodete Entities nochmal encoded werden
- * @return string Escaped string
- */
 function e($string, $doubleEncode = true) {
     if($string === null) return '';
     return htmlspecialchars($string, ENT_QUOTES | ENT_HTML5, 'UTF-8', $doubleEncode);
 }
 
-/**
- * JSON Escape für JavaScript-Kontext
- * 
- * @param mixed $data Data to encode
- * @return string JSON encoded string
- */
 function je($data) {
     return json_encode($data, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 }
 
-/**
- * URL Escape
- * 
- * @param string $string String to encode
- * @return string URL encoded string
- */
 function ue($string) {
     return urlencode($string);
 }
 
-/**
- * Lädt eine Seite dynamisch
- * 
- * @param string $page Page name ohne .php
- * @param array $data Optionale Daten die an die Seite übergeben werden
- * @return void
- */
 function loadPage($page, $data = []) {
     global $app;
     
-    // Security: Verhindere Directory Traversal
     $page = str_replace(['..', '/', '\\'], '', $page);
-    
     $pagePath = PAGES_PATH . DIRECTORY_SEPARATOR . $page . '.php';
     
     if(file_exists($pagePath)) {
-        // Daten extrahieren für die Page
         extract($data, EXTR_SKIP);
         
-        // Buffer starten für Error Handling
         ob_start();
         try {
             include $pagePath;
@@ -346,8 +322,8 @@ function loadPage($page, $data = []) {
         } catch(Exception $e) {
             ob_end_clean();
             
-            if(LOG_ENABLED && class_exists('Logger')) {
-                $logger = new Logger('pages');
+            if(LOG_ENABLED && class_exists('App\Core\Logger')) {
+                $logger = new App\Core\Logger('pages');
                 $logger->error("Error loading page: {$page}", [
                     'error' => $e->getMessage(),
                     'file' => $e->getFile(),
@@ -366,8 +342,8 @@ function loadPage($page, $data = []) {
             echo '</div>';
         }
     } else {
-        if(LOG_ENABLED && class_exists('Logger')) {
-            $logger = new Logger('pages');
+        if(LOG_ENABLED && class_exists('App\Core\Logger')) {
+            $logger = new App\Core\Logger('pages');
             $logger->warning("Page not found: {$page}", [
                 'expected_path' => $pagePath,
                 'referrer' => $_SERVER['HTTP_REFERER'] ?? 'none'
@@ -384,11 +360,6 @@ function loadPage($page, $data = []) {
     }
 }
 
-/**
- * Lädt Spielerdaten neu (für AJAX)
- * 
- * @return array|false Player data or false on error
- */
 function reloadPlayerData() {
     global $app;
     
@@ -402,7 +373,7 @@ function reloadPlayerData() {
         
     } catch(Exception $e) {
         if(LOG_ENABLED) {
-            $logger = new Logger('player');
+            $logger = new App\Core\Logger('player');
             $logger->error('Failed to reload player data', [
                 'error' => $e->getMessage()
             ]);
@@ -411,24 +382,10 @@ function reloadPlayerData() {
     }
 }
 
-/**
- * Formatiert Zahlen mit Tausender-Trennung
- * 
- * @param int|float $number Number to format
- * @param int $decimals Decimal places
- * @return string Formatted number
- */
 function formatNumber($number, $decimals = 0) {
     return number_format($number, $decimals, ',', '.');
 }
 
-/**
- * Formatiert Bytes in lesbare Größe
- * 
- * @param int $bytes Bytes
- * @param int $precision Decimal places
- * @return string Formatted size
- */
 function formatBytes($bytes, $precision = 2) {
     $units = ['B', 'KB', 'MB', 'GB', 'TB'];
     
@@ -439,12 +396,6 @@ function formatBytes($bytes, $precision = 2) {
     return round($bytes, $precision) . ' ' . $units[$i];
 }
 
-/**
- * Zeitdifferenz in lesbarem Format
- * 
- * @param int $timestamp Unix timestamp
- * @return string Readable time difference
- */
 function timeAgo($timestamp) {
     $diff = time() - $timestamp;
     
@@ -456,18 +407,9 @@ function timeAgo($timestamp) {
     return date('d.m.Y H:i', $timestamp);
 }
 
-/**
- * Sicherer Redirect
- * 
- * @param string $url URL to redirect to
- * @param int $statusCode HTTP status code
- * @return void
- */
 function redirect($url, $statusCode = 302) {
-    // Verhindere Header Injection
     $url = str_replace(["\r", "\n"], '', $url);
     
-    // Validiere URL
     if(!filter_var($url, FILTER_VALIDATE_URL) && strpos($url, '/') !== 0) {
         $url = '/';
     }
@@ -477,19 +419,11 @@ function redirect($url, $statusCode = 302) {
         exit;
     }
     
-    // Fallback wenn Headers schon gesendet
     echo '<script>window.location.href="' . e($url) . '";</script>';
     echo '<noscript><meta http-equiv="refresh" content="0;url=' . e($url) . '"></noscript>';
     exit;
 }
 
-/**
- * Gibt JSON-Response zurück (für AJAX)
- * 
- * @param mixed $data Data to return
- * @param int $statusCode HTTP status code
- * @return void
- */
 function jsonResponse($data, $statusCode = 200) {
     if(!headers_sent()) {
         http_response_code($statusCode);
@@ -500,42 +434,19 @@ function jsonResponse($data, $statusCode = 200) {
     exit;
 }
 
-/**
- * Prüft ob Request ein AJAX-Request ist
- * 
- * @return bool
- */
 function isAjax() {
     return !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
            strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 }
 
-/**
- * Prüft ob Request eine POST-Request ist
- * 
- * @return bool
- */
 function isPost() {
     return $_SERVER['REQUEST_METHOD'] === 'POST';
 }
 
-/**
- * Prüft ob Request eine GET-Request ist
- * 
- * @return bool
- */
 function isGet() {
     return $_SERVER['REQUEST_METHOD'] === 'GET';
 }
 
-/**
- * Holt sicher einen GET-Parameter
- * 
- * @param string $key Parameter key
- * @param mixed $default Default value
- * @param string $filter Filter type (int, string, email, url)
- * @return mixed Filtered value
- */
 function getParam($key, $default = null, $filter = 'string') {
     if(!isset($_GET[$key])) {
         return $default;
@@ -560,14 +471,6 @@ function getParam($key, $default = null, $filter = 'string') {
     }
 }
 
-/**
- * Holt sicher einen POST-Parameter
- * 
- * @param string $key Parameter key
- * @param mixed $default Default value
- * @param string $filter Filter type
- * @return mixed Filtered value
- */
 function postParam($key, $default = null, $filter = 'string') {
     if(!isset($_POST[$key])) {
         return $default;
@@ -592,33 +495,14 @@ function postParam($key, $default = null, $filter = 'string') {
     }
 }
 
-/**
- * Generiert einen zufälligen Token
- * 
- * @param int $length Length in bytes (will be doubled in hex)
- * @return string Random token
- */
 function generateToken($length = 32) {
     return bin2hex(random_bytes($length));
 }
 
-/**
- * Prüft ob String ein gültiger Token ist
- * 
- * @param string $token Token to validate
- * @return bool
- */
 function isValidToken($token) {
     return is_string($token) && preg_match('/^[a-f0-9]{64,}$/', $token);
 }
 
-/**
- * Debug-Funktion (nur in DEV_MODE)
- * 
- * @param mixed $data Data to debug
- * @param bool $die Stop execution
- * @return void
- */
 function dd($data, $die = true) {
     if(!DEV_MODE) return;
     
@@ -631,10 +515,9 @@ function dd($data, $die = true) {
 }
 
 // ============================================================================
-// PERFORMANCE MONITORING (nur in DEV_MODE)
+// PERFORMANCE MONITORING
 // ============================================================================
 if(DEV_MODE && LOG_ENABLED) {
-    // Start Time für Performance-Messung
     if(!defined('APP_START_TIME')) {
         define('APP_START_TIME', microtime(true));
     }
@@ -642,20 +525,21 @@ if(DEV_MODE && LOG_ENABLED) {
         define('APP_START_MEMORY', memory_get_usage());
     }
     
-    // Bei Script-Ende Performance loggen
     register_shutdown_function(function() {
-        if(!class_exists('Logger')) return;
+        if(!class_exists('App\Core\Logger')) return;
         
-        $executionTime = (microtime(true) - APP_START_TIME) * 1000; // in ms
+        $executionTime = (microtime(true) - APP_START_TIME) * 1000;
         $memoryUsed = memory_get_usage() - APP_START_MEMORY;
         $peakMemory = memory_get_peak_usage(true);
         
-        if($executionTime > 1000) { // Warnung wenn > 1 Sekunde
-            $logger = new Logger('performance');
-            $logger->performanceWarning('Page load', $executionTime, 1000);
+        if($executionTime > 1000) {
+            $logger = new App\Core\Logger('performance');
+            $logger->warning("Slow page load: {$executionTime}ms", [
+                'url' => $_SERVER['REQUEST_URI'] ?? 'unknown'
+            ]);
         }
         
-        $logger = new Logger('performance');
+        $logger = new App\Core\Logger('performance');
         $logger->debug('Request completed', [
             'execution_time_ms' => round($executionTime, 2),
             'memory_used' => formatBytes($memoryUsed),
@@ -676,11 +560,12 @@ if(defined('TIMEZONE')) {
 // ============================================================================
 // READY
 // ============================================================================
-if(LOG_ENABLED && DEBUG_MODE) {
-    $logger = new Logger('init');
+if(LOG_ENABLED && DEV_MODE) {
+    $logger = new App\Core\Logger('init');
     $logger->debug('Init file loaded successfully', [
         'php_version' => PHP_VERSION,
         'memory_limit' => ini_get('memory_limit'),
-        'max_execution_time' => ini_get('max_execution_time')
+        'max_execution_time' => ini_get('max_execution_time'),
+        'app_structure' => 'new (app/)'
     ]);
 }

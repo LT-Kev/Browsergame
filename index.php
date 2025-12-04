@@ -1,8 +1,15 @@
 <?php
-// index.php
+// ============================================================================
+// index.php - Hauptseite (nach Migration zu app/)
+// ============================================================================
+
 require_once __DIR__ . '/init.php';
 
-$app = new App();
+// App ist bereits als Singleton initialisiert in init.php
+// Aber wir importieren die Klasse für Type-Hinting
+use App\Core\App;
+
+$app = App::getInstance();
 
 // Login-Check
 $auth = $app->getAuth();
@@ -23,7 +30,6 @@ $playerData = $app->getPlayer()->getPlayerById($playerId);
 // ============================================================================
 // RPG-SYSTEM: Character Creation Check
 // ============================================================================
-// Wenn Character noch nicht erstellt wurde, zu Character Creation weiterleiten
 if(!$playerData['character_created']) {
     header('Location: character_creation.php');
     exit;

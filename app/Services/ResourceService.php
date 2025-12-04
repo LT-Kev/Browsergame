@@ -1,23 +1,28 @@
 <?php
-
 // ============================================================================
 // app/Services/ResourceService.php
 // ============================================================================
 
-class ResourceService {
-    private App $app;
+namespace App\Services;
 
-    public function __construct(App $app) {
-        $this->app = $app;
+use App\Core\Database;
+
+class ResourceService {
+    private Database $db;
+    private PlayerService $player;
+
+    public function __construct(Database $db, PlayerService $player) {
+        $this->db = $db;
+        $this->player = $player;
     }
 
     public function updateResources(int $playerId): void {
-        $player = $this->app->getPlayer()->getPlayerById($playerId);
+        $player = $this->player->getPlayerById($playerId);
         if(!$player) return;
 
         if(!$player['last_resource_update']) {
             $sql = "UPDATE players SET last_resource_update = NOW() WHERE id = :id";
-            $this->app->getDb()->update($sql, [':id' => $playerId]);
+            $this->db->update($sql, [':id' => $playerId]);
             return;
         }
 
@@ -38,7 +43,32 @@ class ResourceService {
         $newStone = min($player['stone'] + $stoneGained, $player['stone_capacity']);
 
         $sql = "UPDATE players SET gold = :gold, food = :food, wood = :wood, stone = :stone, last_resource_update = NOW() WHERE id = :id";
-        $this->app->getDb()->update($sql, [':gold' => $newGold, ':food' => $newFood, ':wood' => $newWood, ':stone' => $newStone, ':id' => $playerId]);
+        $this->db->update($sql, [':gold' => $newGold, ':food' => $newFood, ':wood' => $newWood, ':stone' => $newStone, ':id' => $playerId]);
+    }
+
+    public function getPlayerResources(int $playerId): ?array {
+        $this->updateResources($playerId);
+        
+        $player = $this->player->getPlayerById($playerId);
+        
+        if(!$player) {
+            return null;
+        }
+        
+        return [
+            'gold' => $player['gold'],
+            'food' => $player['food'],
+            'wood' => $player['wood'],
+            'stone' => $player['stone'],
+            'gold_capacity' => $player['gold_capacity'],
+            'food_capacity' => $player['food_capacity'],
+            'wood_capacity' => $player['wood_capacity'],
+            'stone_capacity' => $player['stone_capacity'],
+            'gold_production' => $player['gold_production'],
+            'food_production' => $player['food_production'],
+            'wood_production' => $player['wood_production'],
+            'stone_production' => $player['stone_production']
+        ];
     }
 
     public function gather(int $playerId, string $resourceType, int $amount = 10): array {
@@ -47,7 +77,7 @@ class ResourceService {
             return ['success' => false, 'message' => 'Ungültige Ressource'];
         }
 
-        $player = $this->app->getPlayer()->getPlayerById($playerId);
+        $player = $this->player->getPlayerById($playerId);
         if(!$player) return ['success' => false, 'message' => 'Spieler nicht gefunden'];
 
         $energyCost = ceil($amount / 10) * 5;
@@ -63,7 +93,7 @@ class ResourceService {
         $actualAmount = min($amount, $player[$capacityKey] - $player[$resourceType]);
 
         $sql = "UPDATE players SET $resourceType = $resourceType + :amount, energy = energy - :energy_cost WHERE id = :id";
-        $this->app->getDb()->update($sql, [':amount' => $actualAmount, ':energy_cost' => $energyCost, ':id' => $playerId]);
+        $this->db->update($sql, [':amount' => $actualAmount, ':energy_cost' => $energyCost, ':id' => $playerId]);
 
         $message = '+' . $actualAmount . ' ' . $resourceType . ' gesammelt (-' . $energyCost . ' Energie)';
         return ['success' => true, 'message' => $message, 'gathered' => $actualAmount, 'energy_cost' => $energyCost];

@@ -10,4 +10,8 @@
            • Neue Quest verfügbar<br>
            • Level aufgestiegen!</p>
     </div>
+    <div class="info-box">
+        <h4>Class System Update</h4>
+        <p></p>
+    </div>
 </div>

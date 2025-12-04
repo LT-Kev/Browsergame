@@ -1,4 +1,8 @@
 <?php
+// ============================================================================
+// app/Core/App.php - COMPLETE VERSION
+// ============================================================================
+
 namespace App\Core;
 
 use App\Services\PlayerService;
@@ -20,6 +24,7 @@ class App {
     private SessionManager $session;
     private Logger $logger;
 
+    // Services
     private PlayerService $playerService;
     private ResourceService $resourceService;
     private BuildingService $buildingService;
@@ -69,8 +74,10 @@ class App {
     }
     
     private function initServices(): void {
-        // Core Services
+        // Player Service (benötigt von vielen anderen)
         $this->playerService = new PlayerService($this->db, $this->logger);
+        
+        // Core Services
         $this->resourceService = new ResourceService($this->db, $this->playerService);
         $this->buildingService = new BuildingService($this->db, $this->playerService);
         $this->adminService = new AdminService($this->db, $this->playerService);
@@ -94,7 +101,10 @@ class App {
         }
     }
 
-    // Getters
+    // ========================================================================
+    // GETTERS - Core
+    // ========================================================================
+    
     public function getDB(): Database {
         return $this->db;
     }
@@ -106,6 +116,14 @@ class App {
     public function getLogger(): Logger {
         return $this->logger;
     }
+
+    public function getAuth(): Auth {
+        return $this->auth;
+    }
+
+    // ========================================================================
+    // GETTERS - Services
+    // ========================================================================
 
     public function getPlayer(): PlayerService {
         return $this->playerService;
@@ -150,13 +168,13 @@ class App {
     public function getStats(): StatsService {
         return $this->statsService;
     }
-
-    public function getAuth(): Auth {
-        return $this->auth;
-    }
     
-    // Prevent cloning
+    // ========================================================================
+    // SINGLETON PROTECTION
+    // ========================================================================
+    
     private function __clone() {}
+    
     public function __wakeup() {
         throw new \Exception("Cannot unserialize singleton");
     }

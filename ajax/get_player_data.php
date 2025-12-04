@@ -4,7 +4,12 @@
 // ============================================================================
 ?>
 <?php
-require_once __DIR__ . '/../init.php';
+require_once '../init.php';
+
+use App\Core\App;
+
+$app = App::getInstance();
+$playerId = $app->getAuth()->getCurrentPlayerId();
 
 header('Content-Type: application/json');
 
