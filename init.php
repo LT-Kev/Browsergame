@@ -146,7 +146,7 @@ ini_set('memory_limit', '128M');
 ini_set('max_execution_time', 30);
 
 // ============================================================================
-// PSR-4 AUTOLOADER für app/ Namespace
+// PSR-4 AUTOLOADER für app/ 
 // ============================================================================
 spl_autoload_register(function($className) {
     // PSR-4: App\ Namespace → app/ Ordner
@@ -165,22 +165,6 @@ spl_autoload_register(function($className) {
         }
         
         return;
-    }
-    
-    // ========================================================================
-    // LEGACY SUPPORT: Alte class/ Ordner Struktur
-    // ========================================================================
-    // Für Abwärtskompatibilität während Migration
-    $legacyFile = CLASS_PATH . DIRECTORY_SEPARATOR . 'class.' . strtolower($className) . '.php';
-    
-    if(file_exists($legacyFile)) {
-        require_once $legacyFile;
-        return;
-    }
-    
-    // Logging
-    if(DEV_MODE) {
-        trigger_error("Class not found: {$className}", E_USER_WARNING);
     }
 });
 
