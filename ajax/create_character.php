@@ -14,7 +14,7 @@ $playerId = $app->getAuth()->getCurrentPlayerId();
 
 header('Content-Type: application/json');
 
-$app = new App();
+// Entfernt: $app bereits via getInstance()
 $auth = $app->getAuth();
 
 if(!$auth->isLoggedIn()) {

@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/../../init.php';
 
+use App\Core\App;
+
 // App und Auth holen
-$app = new App();
-$auth = $app->getAuth();
-$playerId = $auth->getCurrentPlayerId();
+$app = App::getInstance();
+$playerId = $app->getAuth()->getCurrentPlayerId();
 $admin = $app->getAdmin();
 
 // Admin-Prüfung

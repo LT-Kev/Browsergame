@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/init.php';
 
-$app = new App();
+use App\Core\App;
+
+$app = App::getInstance();
 $auth = $app->getAuth();
 
 $error = '';

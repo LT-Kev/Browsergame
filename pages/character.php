@@ -5,7 +5,9 @@
  */
 require_once __DIR__ . '/../init.php';
 
-$app = new App();
+use App\Core\App;
+
+$app = App::getInstance();
 $auth = $app->getAuth();
 
 $playerId = $auth->getCurrentPlayerId();
@@ -15,11 +17,10 @@ if(!$playerId) {
 }
 
 $player = $app->getPlayer()->getPlayerById($playerId);
-$race = $app->getDB()->selectOne("SELECT * FROM races WHERE id = :id", [':id' => $player['race_id']]);
-$rpgClass = new RPGClass($app->getDB());
-$activeClass = $rpgClass->getActiveClass($playerId);
-$playerClasses = $rpgClass->getPlayerClasses($playerId);
-$availableClasses = $rpgClass->getAvailableClassesForPlayer($playerId);
+$race = $app->getRace()->getRaceById($player['race_id']);
+$activeClass = $app->getRPGClass()->getActiveClass($playerId);
+$playerClasses = $app->getRPGClass()->getPlayerClasses($playerId);
+$availableClasses = $app->getRPGClass()->getAvailableClassesForPlayer($playerId);
 ?>
 
 <style>
@@ -288,18 +289,18 @@ $availableClasses = $rpgClass->getAvailableClassesForPlayer($playerId);
     <!-- Basic Info Card -->
     <div class="character-card">
         <div class="character-header">
-            <div class="character-icon"><?php echo $race['icon']; ?></div>
+            <div class="character-icon"><?php echo $race['icon'] ?? '👤'; ?></div>
             <div class="character-info">
                 <div class="character-name"><?php echo htmlspecialchars($player['username']); ?></div>
                 <div class="character-title">
-                    Level <?php echo $player['level']; ?> <?php echo $race['name']; ?> <?php echo $activeClass['name']; ?>
+                    Level <?php echo $player['level']; ?> <?php echo $race['name'] ?? 'Unbekannt'; ?> <?php echo $activeClass['name'] ?? 'Keine Klasse'; ?>
                 </div>
             </div>
         </div>
         
         <div style="margin-bottom: 15px;">
-            <strong style="color: #e94560;">Rasse:</strong> <?php echo $race['name']; ?><br>
-            <strong style="color: #3498db;">Klasse:</strong> <?php echo $activeClass['name']; ?><br>
+            <strong style="color: #e94560;">Rasse:</strong> <?php echo $race['name'] ?? 'Unbekannt'; ?><br>
+            <strong style="color: #3498db;">Klasse:</strong> <?php echo $activeClass['name'] ?? 'Keine'; ?><br>
             <strong style="color: #f39c12;">Level:</strong> <?php echo $player['level']; ?>
         </div>
         
@@ -430,6 +431,7 @@ $availableClasses = $rpgClass->getAvailableClassesForPlayer($playerId);
 <div class="character-card">
     <h3 style="color: #3498db; margin-bottom: 20px;">🎓 Klassen</h3>
     
+    <?php if(!empty($playerClasses)): ?>
     <div class="class-list">
         <?php foreach($playerClasses as $pClass): ?>
         <div class="class-item <?php echo $pClass['is_active'] ? 'active' : ''; ?>">
@@ -461,6 +463,11 @@ $availableClasses = $rpgClass->getAvailableClassesForPlayer($playerId);
         </div>
         <?php endforeach; ?>
     </div>
+    <?php else: ?>
+    <p style="text-align: center; color: #95a5a6; padding: 20px;">
+        Noch keine Klassen gelernt
+    </p>
+    <?php endif; ?>
     
     <?php if(!empty($availableClasses)): ?>
     <h4 style="color: #f39c12; margin-top: 30px; margin-bottom: 15px;">📚 Verfügbare Klassen</h4>
@@ -498,7 +505,7 @@ function distributeStat(statName, amount) {
         data: {
             stat: statName,
             amount: amount,
-            csrf_token: '<?php echo CSRF::generateToken(); ?>'
+            csrf_token: '<?php echo \App\Helpers\CSRF::generateToken(); ?>'
         },
         dataType: 'json',
         success: function(response) {
@@ -526,7 +533,7 @@ function learnClass(classId) {
         type: 'POST',
         data: {
             class_id: classId,
-            csrf_token: '<?php echo CSRF::generateToken(); ?>'
+            csrf_token: '<?php echo \App\Helpers\CSRF::generateToken(); ?>'
         },
         dataType: 'json',
         success: function(response) {
@@ -553,7 +560,7 @@ function switchClass(classId) {
         type: 'POST',
         data: {
             class_id: classId,
-            csrf_token: '<?php echo CSRF::generateToken(); ?>'
+            csrf_token: '<?php echo \App\Helpers\CSRF::generateToken(); ?>'
         },
         dataType: 'json',
         success: function(response) {
@@ -569,5 +576,10 @@ function switchClass(classId) {
             alert('❌ Fehler beim Wechseln');
         }
     });
+}
+
+function showLearnClassModal(classId) {
+    // Optional: Show detailed modal
+    console.log('Show class details for ID:', classId);
 }
 </script>

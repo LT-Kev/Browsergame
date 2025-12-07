@@ -3,9 +3,10 @@
 
 require_once __DIR__ . '/../../init.php';
 
-$app = new App();
-$auth = $app->getAuth();
-$playerId = $auth->getCurrentPlayerId();
+use App\Core\App;
+
+$app = App::getInstance();
+$playerId = $app->getAuth()->getCurrentPlayerId();
 $admin = $app->getAdmin();
 $db = $app->getDB();
 

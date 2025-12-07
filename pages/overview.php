@@ -1,24 +1,34 @@
 <?php
 require_once __DIR__ . '/../init.php';
 
-$app = new App();
-$auth = $app->getAuth();
+// App kommt aus init.php
+$playerId = $app->getAuth()->getCurrentPlayerId();
 
-$playerId = $auth->getCurrentPlayerId();
-if(!$playerId) {
-    echo '<p>Nicht eingeloggt</p>';
-    exit;
-}
 ?>
 
-<h2>Übersicht</h2>
-<div class="info-box">
-    <h4>Willkommen zurück!</h4>
-    <p>Dies ist die Übersichtsseite. Hier siehst du alle wichtigen Informationen auf einen Blick.</p>
-</div>
-<div class="info-box">
-    <h4>Tägliche Quests</h4>
-    <p>• Besiege 5 Gegner (3/5)<br>
-       • Sammle 100 Gold (100/100) ✓<br>
-       • Besuche den Shop (0/1)</p>
+<div class="center-content" id="center-content">
+
+    <?php
+    if(!$playerId) {
+        echo '<p>Nicht eingeloggt</p>';
+    exit;
+    }
+    ?>
+
+
+    <h2>Hauptbereich</h2>
+    <div class="info-box">
+        <h4>Willkommensnachricht</h4>
+        <p>Hier wird der Hauptinhalt deines Browsergames angezeigt. Dieser Bereich passt sich dynamisch an und scrollt bei längeren Inhalten.</p>
+    </div>
+    <div class="info-box">
+        <h4>Letzte Aktivitäten</h4>
+        <p>• Du hast einen Gegner besiegt<br>
+           • Neue Quest verfügbar<br>
+           • Level aufgestiegen!</p>
+    </div>
+    <div class="info-box">
+        <h4>Class System Update</h4>
+        <p></p>
+    </div>
 </div>

@@ -13,10 +13,8 @@ $playerId = $app->getAuth()->getCurrentPlayerId();
 
 header('Content-Type: application/json');
 
-$app = new App();
-$auth = $app->getAuth();
-
-$playerId = $auth->getCurrentPlayerId();
+// Entfernt: $app bereits via getInstance()
+$playerId = $app->getAuth()->getCurrentPlayerId();
 
 if(!$playerId) {
     $playerId = 1;

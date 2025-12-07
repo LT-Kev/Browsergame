@@ -10,7 +10,7 @@ $playerId = $app->getAuth()->getCurrentPlayerId();
 header('Content-Type: application/json');
 
 try {
-    $app = new App();
+    // Entfernt: $app bereits via getInstance()
     $db = $app->getDB();
     
     $sql = "SELECT * FROM races WHERE is_playable = 1 ORDER BY is_hybrid ASC, name ASC";

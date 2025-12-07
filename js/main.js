@@ -13,6 +13,9 @@ $(document).ready(function() {
     // Navigation
     initNavigation();
 
+    // Landing Page
+    loadPage('overview');
+
     // Admin Formulare
     initAdminForms();
 });

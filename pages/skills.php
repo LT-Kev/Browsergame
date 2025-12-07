@@ -5,10 +5,10 @@
  */
 require_once __DIR__ . '/../init.php';
 
-$app = new App();
-$auth = $app->getAuth();
+use App\Core\App;
 
-$playerId = $auth->getCurrentPlayerId();
+$app = App::getInstance();
+$playerId = $app->getAuth()->getCurrentPlayerId();
 if(!$playerId) {
     echo '<p>Nicht eingeloggt</p>';
     exit;

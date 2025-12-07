@@ -1,3 +1,9 @@
 /config/config.php
 /logs/
 /assets/css/styles.css
+/migration*
+/*copy
+
+migrate_files.php
+debug_remember.php
+show_structure.php

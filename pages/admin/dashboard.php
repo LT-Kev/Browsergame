@@ -3,11 +3,11 @@
 
 require_once __DIR__ . '/../../init.php';
 
+use App\Core\App;
 
-$app = new App();
-$auth = $app->getAuth();
 
-$playerId = $auth->getCurrentPlayerId();
+$app = App::getInstance();
+$playerId = $app->getAuth()->getCurrentPlayerId();
 if(!$playerId || !$app->getAdmin()->isAdmin($playerId)) {
     echo '<p style="color: #e74c3c;">Keine Berechtigung</p>';
     exit;
