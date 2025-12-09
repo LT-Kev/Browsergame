@@ -1,3 +1,3 @@
 <div class="footer">
-    <span>&copy; 2024 Dein Browsergame | Kontakt | Impressum | AGB</span>
+    <span>&copy; 2025 Dein Browsergame | Kontakt | Impressum | AGB</span>
 </div>

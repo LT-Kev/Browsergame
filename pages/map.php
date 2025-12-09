@@ -21,80 +21,35 @@ $playerY = $player['world_y'] ?? 500;
 ?>
 
 <style>
-    .map-wrapper {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, #0a0e27 0%, #1a1e3a 100%);
-        z-index: 9999;
+    .map-page {
+        display: grid;
+        grid-template-columns: 300px 1fr 300px;
+        gap: 20px;
+        height: calc(100vh - 200px);
     }
 
-    .map-header {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: rgba(15, 20, 35, 0.95);
-        padding: 15px 20px;
-        border-bottom: 2px solid rgba(233, 69, 96, 0.3);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        z-index: 101;
-        backdrop-filter: blur(10px);
-    }
-
-    .map-header h2 {
-        color: #e94560;
-        font-size: 1.5em;
-        margin: 0;
-    }
-
-    .close-map {
-        padding: 10px 20px;
-        background: linear-gradient(135deg, #e74c3c, #c0392b);
-        border: none;
-        border-radius: 8px;
-        color: #fff;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .close-map:hover {
-        transform: scale(1.05);
-    }
-
-    .map-container {
-        position: absolute;
-        top: 60px;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        overflow: hidden;
-    }
-
-    .map-controls {
-        position: absolute;
-        top: 80px;
-        left: 20px;
-        z-index: 100;
-        background: rgba(15, 20, 35, 0.95);
-        padding: 20px;
-        border-radius: 15px;
+    .map-sidebar {
+        background: linear-gradient(135deg, #1e2a3a 0%, #0f1922 100%);
         border: 2px solid rgba(233, 69, 96, 0.3);
-        backdrop-filter: blur(10px);
-        min-width: 300px;
-        max-height: calc(100vh - 200px);
+        border-radius: 15px;
+        padding: 20px;
         overflow-y: auto;
+        max-height: 800px;
     }
 
-    .map-controls h3 {
+    .map-sidebar h3 {
         color: #e94560;
         margin-bottom: 15px;
-        font-size: 1.3em;
+        font-size: 1.2em;
+    }
+
+    .map-main {
+        position: relative;
+        background: linear-gradient(135deg, #0a0e27 0%, #1a1e3a 100%);
+        border: 2px solid rgba(233, 69, 96, 0.3);
+        border-radius: 15px;
+        overflow: hidden;
+        height: 800px;
     }
 
     .control-group {
@@ -166,19 +121,18 @@ $playerY = $player['world_y'] ?? 500;
         bottom: 20px;
         right: 20px;
         display: flex;
-        flex-direction: column;
         gap: 10px;
-        z-index: 100;
+        z-index: 10;
     }
 
     .zoom-btn {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         background: rgba(15, 20, 35, 0.95);
         border: 2px solid rgba(233, 69, 96, 0.3);
-        border-radius: 10px;
+        border-radius: 8px;
         color: #e94560;
-        font-size: 1.5em;
+        font-size: 1.3em;
         font-weight: bold;
         cursor: pointer;
         transition: all 0.3s;
@@ -194,33 +148,11 @@ $playerY = $player['world_y'] ?? 500;
     }
 
     #worldCanvas {
-        position: absolute;
         cursor: move;
         image-rendering: pixelated;
     }
 
-    .location-info {
-        position: absolute;
-        top: 80px;
-        right: 20px;
-        z-index: 100;
-        background: rgba(15, 20, 35, 0.95);
-        padding: 20px;
-        border-radius: 15px;
-        border: 2px solid rgba(52, 152, 219, 0.3);
-        backdrop-filter: blur(10px);
-        min-width: 300px;
-        max-width: 400px;
-        display: none;
-        max-height: calc(100vh - 200px);
-        overflow-y: auto;
-    }
-
-    .location-info.active {
-        display: block;
-    }
-
-    .location-info h3 {
+    .location-info h4 {
         color: #3498db;
         margin-bottom: 10px;
         display: flex;
@@ -235,18 +167,19 @@ $playerY = $player['world_y'] ?? 500;
     .location-coords {
         color: #95a5a6;
         font-size: 0.9em;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
     }
 
     .location-description {
         color: #bdc3c7;
         margin-bottom: 15px;
         line-height: 1.6;
+        font-size: 0.95em;
     }
 
     .location-stats {
         background: rgba(0, 0, 0, 0.3);
-        padding: 15px;
+        padding: 12px;
         border-radius: 8px;
         margin-bottom: 15px;
     }
@@ -254,7 +187,7 @@ $playerY = $player['world_y'] ?? 500;
     .location-stat {
         display: flex;
         justify-content: space-between;
-        margin: 8px 0;
+        margin: 6px 0;
         font-size: 0.9em;
     }
 
@@ -267,22 +200,13 @@ $playerY = $player['world_y'] ?? 500;
         font-weight: bold;
     }
 
-    .location-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
     .minimap {
-        position: absolute;
-        bottom: 20px;
-        left: 20px;
-        width: 200px;
+        width: 100%;
         height: 200px;
-        background: rgba(15, 20, 35, 0.95);
-        border: 2px solid rgba(233, 69, 96, 0.3);
-        border-radius: 10px;
-        z-index: 100;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        margin-bottom: 15px;
+        position: relative;
     }
 
     .minimap canvas {
@@ -291,30 +215,12 @@ $playerY = $player['world_y'] ?? 500;
         border-radius: 8px;
     }
 
-    .legend {
-        position: absolute;
-        bottom: 240px;
-        left: 20px;
-        background: rgba(15, 20, 35, 0.95);
-        padding: 15px;
-        border-radius: 10px;
-        border: 2px solid rgba(233, 69, 96, 0.3);
-        z-index: 100;
-        min-width: 200px;
-    }
-
-    .legend h4 {
-        color: #e94560;
-        margin-bottom: 10px;
-        font-size: 1em;
-    }
-
     .legend-item {
         display: flex;
         align-items: center;
         gap: 10px;
         margin: 8px 0;
-        font-size: 0.9em;
+        font-size: 0.85em;
     }
 
     .legend-color {
@@ -325,9 +231,6 @@ $playerY = $player['world_y'] ?? 500;
     }
 
     .nearby-locations {
-        background: rgba(0, 0, 0, 0.3);
-        padding: 15px;
-        border-radius: 8px;
         margin-top: 15px;
     }
 
@@ -356,101 +259,71 @@ $playerY = $player['world_y'] ?? 500;
         font-weight: bold;
         color: #3498db;
         margin-bottom: 5px;
+        font-size: 0.9em;
     }
 
     .nearby-location-distance {
-        font-size: 0.85em;
+        font-size: 0.8em;
         color: #95a5a6;
     }
 
-    /* Scrollbar Styling */
-    .map-controls::-webkit-scrollbar,
-    .location-info::-webkit-scrollbar {
+    .map-sidebar::-webkit-scrollbar {
         width: 8px;
     }
 
-    .map-controls::-webkit-scrollbar-track,
-    .location-info::-webkit-scrollbar-track {
+    .map-sidebar::-webkit-scrollbar-track {
         background: rgba(0, 0, 0, 0.3);
         border-radius: 10px;
     }
 
-    .map-controls::-webkit-scrollbar-thumb,
-    .location-info::-webkit-scrollbar-thumb {
+    .map-sidebar::-webkit-scrollbar-thumb {
         background: rgba(233, 69, 96, 0.5);
         border-radius: 10px;
     }
 
-    .map-controls::-webkit-scrollbar-thumb:hover,
-    .location-info::-webkit-scrollbar-thumb:hover {
+    .map-sidebar::-webkit-scrollbar-thumb:hover {
         background: rgba(233, 69, 96, 0.8);
+    }
+
+    .no-location-selected {
+        text-align: center;
+        padding: 40px 20px;
+        color: #95a5a6;
+    }
+
+    .no-location-icon {
+        font-size: 3em;
+        margin-bottom: 10px;
     }
 </style>
 
-<div class="map-wrapper">
-    <div class="map-header">
-        <h2>🗺️ Weltkarte</h2>
-        <button class="close-map" onclick="loadPage('overview')">✕ Schließen</button>
-    </div>
+<h2 style="margin-bottom: 20px;">🗺️ Weltkarte</h2>
 
-    <div class="map-container">
-        <canvas id="worldCanvas"></canvas>
-
-        <!-- Steuerung -->
-        <div class="map-controls">
-            <h3>🎯 Navigation</h3>
-            
-            <div class="current-coords">
-                <strong>📍 Deine Position:</strong><br>
-                X: <span id="playerX"><?php echo $playerX; ?></span> | 
-                Y: <span id="playerY"><?php echo $playerY; ?></span>
-            </div>
-
-            <div class="control-group">
-                <label>🔍 Koordinaten suchen:</label>
-                <input type="number" id="searchX" placeholder="X-Koordinate" value="<?php echo $playerX; ?>">
-            </div>
-
-            <div class="control-group">
-                <input type="number" id="searchY" placeholder="Y-Koordinate" value="<?php echo $playerY; ?>">
-            </div>
-
-            <button class="btn" onclick="jumpToCoords()">📍 Zu Koordinaten springen</button>
-            <button class="btn btn-secondary" onclick="centerOnPlayer()">🏠 Zu meiner Position</button>
-
-            <div class="nearby-locations">
-                <h4>🏛️ Orte in der Nähe</h4>
-                <div id="nearbyLocationsList"></div>
-            </div>
+<div class="map-page">
+    <!-- Linke Sidebar: Navigation -->
+    <div class="map-sidebar">
+        <h3>🎯 Navigation</h3>
+        
+        <div class="current-coords">
+            <strong>📍 Deine Position:</strong><br>
+            X: <span id="playerX"><?php echo $playerX; ?></span> | 
+            Y: <span id="playerY"><?php echo $playerY; ?></span>
         </div>
 
-        <!-- Zoom Controls -->
-        <div class="zoom-controls">
-            <button class="zoom-btn" onclick="zoomIn()">+</button>
-            <button class="zoom-btn" onclick="resetZoom()">⊙</button>
-            <button class="zoom-btn" onclick="zoomOut()">−</button>
+        <div class="control-group">
+            <label>🔍 Koordinaten suchen:</label>
+            <input type="number" id="searchX" placeholder="X-Koordinate" value="<?php echo $playerX; ?>">
         </div>
 
-        <!-- Location Info Panel -->
-        <div class="location-info" id="locationInfo">
-            <h3>
-                <span class="location-icon" id="locationIcon">🏛️</span>
-                <span id="locationName">Ort auswählen</span>
-            </h3>
-            <div class="location-coords" id="locationCoords">X: 0 | Y: 0</div>
-            <div class="location-description" id="locationDescription"></div>
-            
-            <div class="location-stats" id="locationStats"></div>
-
-            <div class="location-actions">
-                <button class="btn" onclick="travelToLocation()">🚶 Hierhin reisen</button>
-                <button class="btn btn-secondary" onclick="closeLocationInfo()">✕ Schließen</button>
-            </div>
+        <div class="control-group">
+            <input type="number" id="searchY" placeholder="Y-Koordinate" value="<?php echo $playerY; ?>">
         </div>
 
-        <!-- Legende -->
-        <div class="legend">
-            <h4>📋 Legende</h4>
+        <button class="btn" onclick="jumpToCoords()">📍 Zu Koordinaten</button>
+        <button class="btn btn-secondary" onclick="centerOnPlayer()">🏠 Meine Position</button>
+
+        <div style="margin-top: 20px;">
+            <h4 style="color: #e94560; margin-bottom: 10px;">📋 Legende</h4>
             <div class="legend-item">
                 <div class="legend-color" style="background: #2ecc71;"></div>
                 <span>Grasland</span>
@@ -477,16 +350,57 @@ $playerY = $player['world_y'] ?? 500;
             </div>
         </div>
 
-        <!-- Minimap -->
+        <div class="nearby-locations">
+            <h4>🏛️ Orte in der Nähe</h4>
+            <div id="nearbyLocationsList"></div>
+        </div>
+    </div>
+
+    <!-- Mitte: Karte -->
+    <div class="map-main">
+        <canvas id="worldCanvas"></canvas>
+
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+            <button class="zoom-btn" onclick="resetZoom()" title="Reset">⊙</button>
+            <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+        </div>
+    </div>
+
+    <!-- Rechte Sidebar: Location Info & Minimap -->
+    <div class="map-sidebar">
+        <h3>🗺️ Übersicht</h3>
+        
         <div class="minimap">
             <canvas id="minimapCanvas"></canvas>
+        </div>
+
+        <div id="locationInfo">
+            <div id="noLocationSelected" class="no-location-selected">
+                <div class="no-location-icon">📍</div>
+                <p>Klicke auf einen Ort auf der Karte für Details</p>
+            </div>
+
+            <div id="locationDetails" style="display: none;">
+                <h4>
+                    <span class="location-icon" id="locationIcon">🏛️</span>
+                    <span id="locationName">Ort</span>
+                </h4>
+                <div class="location-coords" id="locationCoords">X: 0 | Y: 0</div>
+                <div class="location-description" id="locationDescription"></div>
+                
+                <div class="location-stats" id="locationStats"></div>
+
+                <button class="btn" onclick="travelToLocation()">🚶 Hierhin reisen</button>
+                <button class="btn btn-secondary" onclick="closeLocationInfo()">✕ Schließen</button>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
 // ============================================================================
-// WELTKARTE - Koordinatensystem wie Die Stämme
+// WELTKARTE - Koordinatensystem
 // ============================================================================
 
 const canvas = document.getElementById('worldCanvas');
@@ -495,8 +409,8 @@ const minimap = document.getElementById('minimapCanvas');
 const minimapCtx = minimap.getContext('2d');
 
 // Welt-Konfiguration
-const WORLD_SIZE = 1000; // 1000x1000 Koordinaten
-const TILE_SIZE = 40; // Pixel pro Tile
+const WORLD_SIZE = 1000;
+const TILE_SIZE = 40;
 const GRID_COLOR = 'rgba(255, 255, 255, 0.1)';
 
 // Spieler-Position
@@ -505,10 +419,10 @@ let playerPos = {
     y: <?php echo $playerY; ?>
 };
 
-// Kamera-Position (was gerade angezeigt wird)
+// Kamera-Position
 let camera = {
-    x: playerPos.x * TILE_SIZE - window.innerWidth / 2,
-    y: playerPos.y * TILE_SIZE - (window.innerHeight - 60) / 2,
+    x: playerPos.x * TILE_SIZE - 400,
+    y: playerPos.y * TILE_SIZE - 400,
     zoom: 1
 };
 
@@ -518,118 +432,51 @@ let lastMousePos = { x: 0, y: 0 };
 
 // Canvas Größe setzen
 function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 60; // Header abziehen
-    minimap.width = 200;
-    minimap.height = 200;
+    const container = document.querySelector('.map-main');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    minimap.width = 260;
+    minimap.height = 180;
     draw();
 }
 
-// Locations auf der Karte (Beispiel-Daten)
+// Locations
 const locations = [
     {
-        id: 1,
-        name: 'Hauptstadt',
-        icon: '🏰',
-        x: 500,
-        y: 500,
-        type: 'city',
-        level: 10,
-        description: 'Die große Hauptstadt des Königreichs. Hier findest du alles, was das Abenteurer-Herz begehrt.',
-        features: ['Shop', 'Bank', 'Taverne', 'Schmied'],
-        enemyLevel: null
+        id: 1, name: 'Hauptstadt', icon: '🏰', x: 500, y: 500, type: 'city', level: 10,
+        description: 'Die große Hauptstadt des Königreichs.',
+        features: ['Shop', 'Bank', 'Taverne'], enemyLevel: null
     },
     {
-        id: 2,
-        name: 'Dunkler Wald',
-        icon: '🌲',
-        x: 450,
-        y: 480,
-        type: 'dungeon',
-        level: 5,
-        description: 'Ein mysteriöser Wald voller Gefahren. Nur für mutige Abenteurer!',
-        features: ['Monster', 'Schätze'],
-        enemyLevel: '5-8'
+        id: 2, name: 'Dunkler Wald', icon: '🌲', x: 450, y: 480, type: 'dungeon', level: 5,
+        description: 'Ein mysteriöser Wald voller Gefahren.',
+        features: ['Monster', 'Schätze'], enemyLevel: '5-8'
     },
     {
-        id: 3,
-        name: 'Kristallmine',
-        icon: '⛏️',
-        x: 520,
-        y: 490,
-        type: 'resource',
-        level: 3,
-        description: 'Eine ertragreiche Mine mit wertvollen Kristallen.',
-        features: ['Bergbau', 'Ressourcen'],
-        enemyLevel: null
+        id: 3, name: 'Kristallmine', icon: '⛏️', x: 520, y: 490, type: 'resource', level: 3,
+        description: 'Eine ertragreiche Mine.',
+        features: ['Bergbau'], enemyLevel: null
     },
     {
-        id: 4,
-        name: 'Drachenhort',
-        icon: '🐉',
-        x: 550,
-        y: 520,
-        type: 'boss',
-        level: 20,
-        description: 'Die Behausung eines mächtigen Drachen. Nur für die stärksten Helden!',
-        features: ['Boss-Kampf', 'Legendäre Beute'],
-        enemyLevel: '20'
+        id: 4, name: 'Drachenhort', icon: '🐉', x: 550, y: 520, type: 'boss', level: 20,
+        description: 'Die Behausung eines mächtigen Drachen.',
+        features: ['Boss-Kampf'], enemyLevel: '20'
     },
     {
-        id: 5,
-        name: 'Hafen',
-        icon: '⚓',
-        x: 480,
-        y: 530,
-        type: 'city',
-        level: 7,
-        description: 'Ein geschäftiger Hafen am Meer. Handel und Reisen über das Wasser.',
-        features: ['Handel', 'Schiffsreisen'],
-        enemyLevel: null
+        id: 5, name: 'Hafen', icon: '⚓', x: 480, y: 530, type: 'city', level: 7,
+        description: 'Ein geschäftiger Hafen am Meer.',
+        features: ['Handel', 'Schiffsreisen'], enemyLevel: null
     },
     {
-        id: 6,
-        name: 'Goblin-Lager',
-        icon: '👹',
-        x: 470,
-        y: 510,
-        type: 'dungeon',
-        level: 3,
-        description: 'Ein kleines Lager der Goblins. Gut für Anfänger.',
-        features: ['Schwache Monster', 'Beute'],
-        enemyLevel: '3-5'
-    },
-    {
-        id: 7,
-        name: 'Magierturm',
-        icon: '🗼',
-        x: 510,
-        y: 470,
-        type: 'special',
-        level: 15,
-        description: 'Der Turm eines mächtigen Magiers. Hier kannst du Zauber lernen.',
-        features: ['Magie-Training', 'Zauber kaufen'],
-        enemyLevel: null
-    },
-    {
-        id: 8,
-        name: 'Verlassene Ruine',
-        icon: '🏚️',
-        x: 530,
-        y: 510,
-        type: 'dungeon',
-        level: 8,
-        description: 'Alte Ruinen voller Geheimnisse und Gefahren.',
-        features: ['Rätsel', 'Versteckte Schätze'],
-        enemyLevel: '8-12'
+        id: 6, name: 'Goblin-Lager', icon: '👹', x: 470, y: 510, type: 'dungeon', level: 3,
+        description: 'Ein kleines Lager der Goblins.',
+        features: ['Monster'], enemyLevel: '3-5'
     }
 ];
 
-// Terrain-Typen (Prozedural generiert)
+// Terrain
 function getTerrainType(x, y) {
-    // Einfache Noise-Funktion für verschiedene Biome
     const noise = Math.sin(x * 0.1) * Math.cos(y * 0.1);
-    
     if (noise > 0.6) return { color: '#ecf0f1', name: 'Schnee' };
     if (noise > 0.3) return { color: '#95a5a6', name: 'Berge' };
     if (noise > 0) return { color: '#27ae60', name: 'Wald' };
@@ -638,7 +485,6 @@ function getTerrainType(x, y) {
     return { color: '#3498db', name: 'Wasser' };
 }
 
-// Koordinaten zu Screen-Position
 function worldToScreen(wx, wy) {
     return {
         x: (wx * TILE_SIZE - camera.x) * camera.zoom,
@@ -646,7 +492,6 @@ function worldToScreen(wx, wy) {
     };
 }
 
-// Screen-Position zu Koordinaten
 function screenToWorld(sx, sy) {
     return {
         x: Math.floor((sx / camera.zoom + camera.x) / TILE_SIZE),
@@ -654,17 +499,15 @@ function screenToWorld(sx, sy) {
     };
 }
 
-// Zeichne Welt
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Sichtbarer Bereich berechnen
     const startX = Math.floor(camera.x / TILE_SIZE) - 1;
     const startY = Math.floor(camera.y / TILE_SIZE) - 1;
     const endX = Math.ceil((camera.x + canvas.width / camera.zoom) / TILE_SIZE) + 1;
     const endY = Math.ceil((camera.y + canvas.height / camera.zoom) / TILE_SIZE) + 1;
     
-    // Terrain zeichnen
+    // Terrain
     for (let x = Math.max(0, startX); x < Math.min(WORLD_SIZE, endX); x++) {
         for (let y = Math.max(0, startY); y < Math.min(WORLD_SIZE, endY); y++) {
             const terrain = getTerrainType(x, y);
@@ -673,35 +516,34 @@ function draw() {
             ctx.fillStyle = terrain.color;
             ctx.fillRect(pos.x, pos.y, TILE_SIZE * camera.zoom, TILE_SIZE * camera.zoom);
             
-            // Grid zeichnen
             ctx.strokeStyle = GRID_COLOR;
             ctx.lineWidth = 1;
             ctx.strokeRect(pos.x, pos.y, TILE_SIZE * camera.zoom, TILE_SIZE * camera.zoom);
         }
     }
     
-    // Locations zeichnen
+    // Locations
     locations.forEach(loc => {
         if (loc.x >= startX && loc.x <= endX && loc.y >= startY && loc.y <= endY) {
             const pos = worldToScreen(loc.x, loc.y);
             
-            // Icon zeichnen
             ctx.font = `${Math.floor(30 * camera.zoom)}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(loc.icon, pos.x + (TILE_SIZE * camera.zoom) / 2, pos.y + (TILE_SIZE * camera.zoom) / 2);
             
-            // Name zeichnen
-            ctx.font = `${Math.floor(12 * camera.zoom)}px Arial`;
-            ctx.fillStyle = '#fff';
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 3;
-            ctx.strokeText(loc.name, pos.x + (TILE_SIZE * camera.zoom) / 2, pos.y + TILE_SIZE * camera.zoom + 10);
-            ctx.fillText(loc.name, pos.x + (TILE_SIZE * camera.zoom) / 2, pos.y + TILE_SIZE * camera.zoom + 10);
+            if (camera.zoom > 0.7) {
+                ctx.font = `${Math.floor(11 * camera.zoom)}px Arial`;
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 3;
+                ctx.strokeText(loc.name, pos.x + (TILE_SIZE * camera.zoom) / 2, pos.y + TILE_SIZE * camera.zoom + 8);
+                ctx.fillText(loc.name, pos.x + (TILE_SIZE * camera.zoom) / 2, pos.y + TILE_SIZE * camera.zoom + 8);
+            }
         }
     });
     
-    // Spieler zeichnen
+    // Spieler
     const playerScreen = worldToScreen(playerPos.x, playerPos.y);
     ctx.fillStyle = '#e94560';
     ctx.beginPath();
@@ -714,46 +556,32 @@ function draw() {
     );
     ctx.fill();
     
-    // Spieler-Icon
     ctx.font = `${Math.floor(20 * camera.zoom)}px Arial`;
     ctx.fillStyle = '#fff';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('👤', playerScreen.x + (TILE_SIZE * camera.zoom) / 2, playerScreen.y + (TILE_SIZE * camera.zoom) / 2);
     
-    // Minimap zeichnen
     drawMinimap();
 }
 
-// Minimap zeichnen
 function drawMinimap() {
     minimapCtx.fillStyle = '#0a0e27';
-    minimapCtx.fillRect(0, 0, 200, 200);
+    minimapCtx.fillRect(0, 0, 260, 180);
     
-    // Locations auf Minimap
     locations.forEach(loc => {
-        const x = (loc.x / WORLD_SIZE) * 200;
-        const y = (loc.y / WORLD_SIZE) * 200;
+        const x = (loc.x / WORLD_SIZE) * 260;
+        const y = (loc.y / WORLD_SIZE) * 180;
         minimapCtx.fillStyle = '#3498db';
         minimapCtx.fillRect(x - 2, y - 2, 4, 4);
     });
     
-    // Spieler auf Minimap
-    const px = (playerPos.x / WORLD_SIZE) * 200;
-    const py = (playerPos.y / WORLD_SIZE) * 200;
+    const px = (playerPos.x / WORLD_SIZE) * 260;
+    const py = (playerPos.y / WORLD_SIZE) * 180;
     minimapCtx.fillStyle = '#e94560';
     minimapCtx.beginPath();
     minimapCtx.arc(px, py, 4, 0, Math.PI * 2);
     minimapCtx.fill();
-    
-    // Sichtbarer Bereich
-    const viewX = (camera.x / TILE_SIZE / WORLD_SIZE) * 200;
-    const viewY = (camera.y / TILE_SIZE / WORLD_SIZE) * 200;
-    const viewW = ((canvas.width / camera.zoom) / TILE_SIZE / WORLD_SIZE) * 200;
-    const viewH = ((canvas.height / camera.zoom) / TILE_SIZE / WORLD_SIZE) * 200;
-    minimapCtx.strokeStyle = '#e94560';
-    minimapCtx.lineWidth = 2;
-    minimapCtx.strokeRect(viewX, viewY, viewW, viewH);
 }
 
 // Events
@@ -781,13 +609,12 @@ canvas.addEventListener('mouseleave', () => {
     isDragging = false;
 });
 
-// Klick auf Karte
 canvas.addEventListener('click', (e) => {
     if (isDragging) return;
     
-    const worldPos = screenToWorld(e.clientX, e.clientY - 60);
+    const rect = canvas.getBoundingClientRect();
+    const worldPos = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
     
-    // Prüfe ob Location geklickt
     const clickedLocation = locations.find(loc => 
         loc.x === worldPos.x && loc.y === worldPos.y
     );
@@ -797,7 +624,6 @@ canvas.addEventListener('click', (e) => {
     }
 });
 
-// Zoom
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -842,13 +668,14 @@ function jumpToCoords() {
 }
 
 function showLocationInfo(location) {
-    const infoPanel = document.getElementById('locationInfo');
+    document.getElementById('noLocationSelected').style.display = 'none';
+    document.getElementById('locationDetails').style.display = 'block';
+    
     document.getElementById('locationIcon').textContent = location.icon;
     document.getElementById('locationName').textContent = location.name;
     document.getElementById('locationCoords').textContent = `X: ${location.x} | Y: ${location.y}`;
     document.getElementById('locationDescription').textContent = location.description;
     
-    // Stats
     let statsHtml = '';
     statsHtml += `<div class="location-stat"><span class="location-stat-label">📊 Typ:</span><span class="location-stat-value">${location.type}</span></div>`;
     statsHtml += `<div class="location-stat"><span class="location-stat-label">⭐ Level:</span><span class="location-stat-value">${location.level}</span></div>`;
@@ -861,15 +688,12 @@ function showLocationInfo(location) {
     statsHtml += `<div class="location-stat"><span class="location-stat-label">📏 Entfernung:</span><span class="location-stat-value">${Math.round(distance)} Felder</span></div>`;
     
     document.getElementById('locationStats').innerHTML = statsHtml;
-    
-    infoPanel.classList.add('active');
-    
-    // Speichere aktuelle Location für Reisen
     window.selectedLocation = location;
 }
 
 function closeLocationInfo() {
-    document.getElementById('locationInfo').classList.remove('active');
+    document.getElementById('noLocationSelected').style.display = 'block';
+    document.getElementById('locationDetails').style.display = 'none';
 }
 
 function travelToLocation() {
@@ -877,13 +701,11 @@ function travelToLocation() {
     
     const loc = window.selectedLocation;
     const distance = Math.sqrt(Math.pow(loc.x - playerPos.x, 2) + Math.pow(loc.y - playerPos.y, 2));
-    const travelTime = Math.ceil(distance / 10); // 10 Felder pro Stunde
     
-    if (!confirm(`Zu '${loc.name}' reisen?\n\nEntfernung: ${Math.round(distance)} Felder\nReisezeit: ${travelTime} Stunde(n)\n\nMöchtest du die Reise starten?`)) {
+    if (!confirm(`Zu '${loc.name}' reisen?\n\nEntfernung: ${Math.round(distance)} Felder\n\nReise starten?`)) {
         return;
     }
     
-    // AJAX-Request zum Server
     $.ajax({
         url: 'ajax/travel_to_location.php',
         type: 'POST',
@@ -896,7 +718,7 @@ function travelToLocation() {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                alert('✅ Reise gestartet! Du kommst in ' + travelTime + ' Stunde(n) an.');
+                alert('✅ Reise abgeschlossen!');
                 playerPos.x = loc.x;
                 playerPos.y = loc.y;
                 document.getElementById('playerX').textContent = loc.x;
@@ -927,11 +749,11 @@ function updateNearbyLocations() {
     const listHtml = nearby.map(loc => `
         <div class="nearby-location-item" onclick="jumpToLocation(${loc.x}, ${loc.y})">
             <div class="nearby-location-name">${loc.icon} ${loc.name}</div>
-            <div class="nearby-location-distance">📏 ${Math.round(loc.distance)} Felder entfernt</div>
+            <div class="nearby-location-distance">📏 ${Math.round(loc.distance)} Felder</div>
         </div>
     `).join('');
     
-    document.getElementById('nearbyLocationsList').innerHTML = listHtml || '<p style="color: #95a5a6; font-size: 0.9em;">Keine Orte in der Nähe</p>';
+    document.getElementById('nearbyLocationsList').innerHTML = listHtml || '<p style="color: #95a5a6; font-size: 0.85em;">Keine Orte in der Nähe</p>';
 }
 
 function jumpToLocation(x, y) {
@@ -950,10 +772,4 @@ resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
 centerOnPlayer();
 updateNearbyLocations();
-
-// Auto-Update alle 5 Sekunden (für Spieler-Position vom Server)
-setInterval(() => {
-    // Hier könntest du die Spieler-Position vom Server abrufen
-    // loadPlayerData();
-}, 5000);
 </script>
