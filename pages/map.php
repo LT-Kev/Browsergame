@@ -21,6 +21,22 @@ $playerX = $player['world_x'] ?? 500;
 $playerY = $player['world_y'] ?? 500;
 ?>
 
+<style>
+    /* Override content-wrapper für Map */
+    body {
+        overflow: hidden !important;
+    }
+    
+    .content-wrapper {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .main-container {
+        display: none !important; /* Verstecke Sidebars */
+    }
+</style>
+
 <link rel="stylesheet" href="assets/css/map.css">
 
 <div class="map-fullscreen">
