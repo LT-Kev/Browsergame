@@ -194,13 +194,13 @@ $playerY = $player['world_y'] ?? 500;
     </div>
 </div>
 
-<script src="js/map/map-config.js"></script>
-<script src="js/map/map-renderer.js"></script>
-<script src="js/map/map-navigation.js"></script>
-<script src="js/map/map-popup.js"></script>
-<script src="js/map/map-travel.js"></script>
-<script src="js/map/map-zoom.js"></script>
-<script src="js/map/map-main.js"></script>
+<script src="../js/map/map-config.js"></script>
+<script src="../js/map/map-renderer.js"></script>
+<script src="../js/map/map-navigation.js"></script>
+<script src="../js/map/map-popup.js"></script>
+<script src="../js/map/map-travel.js"></script>
+<script src="../js/map/map-zoom.js"></script>
+<script src="../js/map/map-main.js"></script>
 
 <script>
 // Globale Variablen für PHP-Daten
