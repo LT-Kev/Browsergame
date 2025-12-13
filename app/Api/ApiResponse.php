@@ -87,4 +87,40 @@ class ApiResponse {
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
+
+    public function success(array $data = [], string $message = null): array {
+    $response = ['success' => true];
+    
+    if ($message) {
+        $response['message'] = $message;
+    }
+    
+    if (!empty($data)) {
+        $response['data'] = $data;
+    }
+    
+    if ($this->API_DEV) {
+        $response['_debug'] = $this->debug;
+    }
+    
+    return $response;
+}
+
+public function error(string $message, int $code = 400, array $details = []): void {
+    $response = [
+        'success' => false,
+        'error' => $message,
+        'code' => $code
+    ];
+    
+    if (!empty($details)) {
+        $response['details'] = $details;
+    }
+    
+    if ($this->API_DEV) {
+        $response['_debug'] = $this->debug;
+    }
+    
+    $this->sendResponse($response, $code);
+}
 }

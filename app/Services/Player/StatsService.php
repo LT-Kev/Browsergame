@@ -16,30 +16,35 @@ class StatsService {
         $this->events = $events;
     }
 
-    public function addExp(int $playerId, int $exp): int {
-        $player = $this->db->selectOne("SELECT level, exp, character_created FROM players WHERE id = :id", [':id' => $playerId]);
-        if (!$player) return 0;
+    public function addExp(int $playerId, int $exp): bool {
+        $player = $this->playerService->getPlayerById($playerId);
+        if (!$player) return false;
 
         $newExp = $player['exp'] + $exp;
-        $level = $player['level'];
         $leveledUp = false;
+        $newLevel = $player['level'];
 
-        while ($newExp >= $this->expNeeded($level)) {
-            $newExp -= $this->expNeeded($level);
-            $level++;
+        // Level-Up Check
+        while ($newExp >= $player['exp_needed']) {
+            $newExp -= $player['exp_needed'];
+            $newLevel++;
             $leveledUp = true;
         }
 
-        $this->db->update(
-            "UPDATE players SET exp = :exp, level = :level WHERE id = :id",
-            [':exp' => $newExp, ':level' => $level, ':id' => $playerId]
-        );
+        // Update DB
+        $this->db->update('players', [
+            'exp' => $newExp,
+            'level' => $newLevel
+        ], ['id' => $playerId]);
 
-        if ($leveledUp && $player['character_created']) {
-            $this->logger->info("Player leveled up", ['player_id' => $playerId, 'new_level' => $level]);
+        // EVENT FEUERN
+        if ($leveledUp) {
+            $app = \App\Core\App::getInstance();
+            $event = new \App\Events\PlayerLevelUpEvent($playerId, $newLevel);
+            $app->getEventManager()->emit(\App\Events\Events::PLAYER_LEVEL_UP, $event);
         }
 
-        return $leveledUp ? $level : 0;
+        return true;
     }
 
     private function expNeeded(int $level): int {
