@@ -1,6 +1,6 @@
 <?php
 // ============================================================================
-// app/Core/App.php - COMPLETE VERSION
+// app/Core/App.php - COMPLETE VERSION WITH EventManager
 // ============================================================================
 
 namespace App\Core;
@@ -17,12 +17,15 @@ use App\Services\RaceService;
 use App\Services\RPGClassService;
 use App\Services\StatsService;
 
+use App\Core\EventManager;
+
 class App {
     private static ?App $instance = null;
     
     private Database $db;
     private SessionManager $session;
     private Logger $logger;
+    private EventManager $eventManager;
 
     // Services
     private PlayerService $playerService;
@@ -42,6 +45,7 @@ class App {
     private function __construct() {
         $this->initCore();
         $this->initServices();
+        $this->initEventManager();
     }
     
     public static function getInstance(): self {
@@ -101,6 +105,21 @@ class App {
         }
     }
 
+    private function initEventManager(): void {
+        $this->eventManager = new EventManager();
+        
+        // Optionale automatische Listener-Registrierung
+        $registerListenersFile = APP_PATH . '/Events/registerListeners.php';
+        if(file_exists($registerListenersFile)) {
+            $registerListeners = require $registerListenersFile;
+            $registerListeners($this->eventManager);
+        }
+        
+        if(LOG_ENABLED) {
+            $this->logger->info('EventManager initialized');
+        }
+    }
+
     // ========================================================================
     // GETTERS - Core
     // ========================================================================
@@ -119,6 +138,10 @@ class App {
 
     public function getAuth(): Auth {
         return $this->auth;
+    }
+
+    public function getEventManager(): EventManager {
+        return $this->eventManager;
     }
 
     // ========================================================================
