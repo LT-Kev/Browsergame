@@ -259,6 +259,7 @@ const NavigationHistory = {
     formatPageName(page) {
         const specialNames = {
             'admins': 'Admin',
+            'admin_edit': 'Bearbeiten',
             'dashboard': 'Dashboard',
             'players': 'Spieler',
             'player_edit': 'Bearbeiten',

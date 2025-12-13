@@ -9,6 +9,11 @@ export function initNavigation() {
         const playerId = $(this).data('id');
         loadPage('admin/player_edit', {id: playerId});
     });
+
+    $(document).on('click', '.edit-admin', function() {
+    const adminId = $(this).data('id');
+    loadPage('admin/admin_edit', {id: adminId});
+    });
 }
 
 export function loadPage(page, params = {}) {
