@@ -42,7 +42,7 @@ $fields = [
     'character_created',
     'race_id',
     'class_id',
-    'admin'
+    'admin_level'
 ];
 
 // Daten holen

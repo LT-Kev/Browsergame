@@ -29,10 +29,17 @@ class Logger {
     }
     
     private function ensureLogDirectory(): void {
+        // Basis-Logverzeichnis
         if(!is_dir($this->logDir)) {
             mkdir($this->logDir, 0755, true);
             file_put_contents($this->logDir . '.htaccess', "Require all denied\nDeny from all");
             file_put_contents($this->logDir . 'index.php', "<?php http_response_code(403); exit('Access Denied'); ?>");
+        }
+
+        // Channel-spezifisches Verzeichnis
+        $channelDir = $this->logDir . $this->channel . '/';
+        if(!is_dir($channelDir)) {
+            mkdir($channelDir, 0755, true);
         }
     }
     
@@ -83,12 +90,13 @@ class Logger {
         if(empty($this->buffer)) {
             return;
         }
-        
+
         try {
             $date = date('Y-m-d');
-            $file = $this->logDir . $this->channel . '_' . $date . '.log';
+            $channelDir = $this->logDir . $this->channel . '/';
+            $file = $channelDir . $this->channel . '_' . $date . '.log';
             $content = implode('', $this->buffer);
-            
+
             file_put_contents($file, $content, FILE_APPEND | LOCK_EX);
             $this->buffer = [];
         } catch(\Exception $e) {
