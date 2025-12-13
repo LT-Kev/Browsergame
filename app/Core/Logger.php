@@ -1,4 +1,5 @@
 <?php
+// app/Core/Logger.php
 namespace App\Core;
 
 class Logger {
