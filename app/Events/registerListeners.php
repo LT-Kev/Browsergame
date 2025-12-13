@@ -6,6 +6,6 @@ use App\Events\Listeners\CombatListener;
 
 return function(EventManager $events) {
     PlayerLevelUpListener::register($events);
-    QuestCompletedListener::register($events);
-    CombatListener::register($events);
+    //QuestCompletedListener::register($events);
+    //CombatListener::register($events);
 };
