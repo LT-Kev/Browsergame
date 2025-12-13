@@ -1,4 +1,5 @@
 <?php
+// app/Core/Auth.php
 namespace App\Core;
 
 class Auth {
@@ -20,6 +21,7 @@ class Auth {
         $playerId = $this->app->getRememberMe()->validateToken();
         if($playerId) {
             $player = $this->app->getPlayer()->getPlayerById($playerId);
+            $this->logger->info("Remember-Me token valid, auto-login", ['player_id'=>$playerId]);
             if($player) {
                 $_SESSION['player_id'] = $player['id'];
                 $_SESSION['username'] = $player['username'];
@@ -30,6 +32,9 @@ class Auth {
                 $this->logger->info('Auto-login via remember token', ['player_id' => $playerId]);
                 return true;
             }
+        }
+        else{
+            $this->logger->info('Remember-Me token invalid or expired', ['cookie'=>$_COOKIE['remember_token'] ?? null]);
         }
         
         return false;

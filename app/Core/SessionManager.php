@@ -1,4 +1,5 @@
 <?php
+// app/Core/SessionManager.php
 namespace App\Core;
 
 class SessionManager {
